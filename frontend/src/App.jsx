@@ -181,8 +181,8 @@ function AuthenticatedApp({ session, onLogout, onSessionChange }) {
           <ScrollToTop />
           <Routes>
             <Route path="/" element={<DashboardPage session={session} />} />
-            <Route path="/checkin" element={<CheckinPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/checkin" element={<CheckinPage session={session} />} />
+            <Route path="/checkout" element={<CheckoutPage session={session} />} />
             <Route path="/historico" element={<HistoryPage session={session} />} />
             <Route path="/minha-conta" element={<AccountPage session={session} onSessionChange={onSessionChange} />} />
             <Route path="/veiculos" element={<AdminRoute session={session}><VehiclesPage /></AdminRoute>} />
@@ -526,7 +526,7 @@ function UsersPage() {
   );
 }
 
-function CheckoutPage() {
+function CheckoutPage({ session }) {
   const [references, setReferences] = useState({ currentOpenTrip: null });
   const [form, setForm] = useState(emptyCheckout);
   const [feedback, setFeedback] = useState("");
@@ -556,6 +556,7 @@ function CheckoutPage() {
             <EmptyState text="Voce nao possui um veiculo em uso para devolver." />
           ) : (
             <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+              <ReadOnlyField label="Usuario" value={session.user.fullName} />
               <ReadOnlyField label="Veiculo em uso" value={`${references.currentOpenTrip.vehicleModel} - ${references.currentOpenTrip.vehiclePlate}`} />
               <ReadOnlyField label="Proprietario" value={references.currentOpenTrip.vehicleOwnerName} />
               <ReadOnlyField label="Observacao do veiculo" value={references.currentOpenTrip.vehicleNotes || "Sem observacoes do veiculo."} />
@@ -574,7 +575,7 @@ function CheckoutPage() {
   );
 }
 
-function CheckinPage() {
+function CheckinPage({ session }) {
   const [references, setReferences] = useState({ vehicles: [], currentOpenTrip: null });
   const [form, setForm] = useState(emptyCheckin);
   const [feedback, setFeedback] = useState("");
@@ -601,6 +602,7 @@ function CheckinPage() {
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <Panel title="Retirar veiculo" subtitle="Selecione apenas o veiculo. O restante e registrado automaticamente.">
           <form onSubmit={handleSubmit} className="grid gap-4">
+            <ReadOnlyField label="Usuario" value={session.user.fullName} />
             <SelectField label="Veiculo" value={form.vehicleId} onChange={(value) => setForm((current) => ({ ...current, vehicleId: value }))} options={references.vehicles.filter((vehicle) => vehicle.status !== "maintenance" && vehicle.status !== "inactive").map((vehicle) => ({ value: vehicle.id, label: `${vehicle.model} - ${vehicle.plate}` }))} />
             {form.vehicleId ? <ReadOnlyField label="Observacao do veiculo" value={references.vehicles.find((vehicle) => String(vehicle.id) === String(form.vehicleId))?.notes || "Sem observacoes do veiculo."} /> : null}
             <TextArea label="Motivo da retirada" value={form.checkinNotes} onChange={(value) => setForm((current) => ({ ...current, checkinNotes: value }))} />
@@ -918,14 +920,14 @@ function FeatureCard({ title, text }) {
 
 function ActionCard({ title, text, buttonLabel, onClick, tone }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+    <button type="button" onClick={onClick} className="w-full rounded-3xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-accent/30">
       <div className="font-semibold text-slate-900">{title}</div>
       <p className="mt-2 text-sm text-slate-600">{text}</p>
-      <button type="button" onClick={onClick} className={`mt-4 inline-flex items-center gap-2 rounded-2xl ${tone} px-4 py-3 font-medium text-white`}>
+      <span className={`mt-4 inline-flex items-center gap-2 rounded-2xl ${tone} px-4 py-3 font-medium text-white`}>
         {buttonLabel}
         <ArrowRight size={16} />
-      </button>
-    </div>
+      </span>
+    </button>
   );
 }
 

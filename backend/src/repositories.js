@@ -87,6 +87,20 @@ function getOpenTripByUser(userId) {
   `).get(userId);
 }
 
+function getDetailedOpenTripByUser(userId) {
+  return db.prepare(`
+    SELECT ${tripSelect}
+    FROM trips t
+    JOIN users u ON u.id = t.user_id
+    JOIN users ci ON ci.id = t.checked_in_by_user_id
+    LEFT JOIN users co ON co.id = t.checked_out_by_user_id
+    JOIN vehicles v ON v.id = t.vehicle_id
+    WHERE t.user_id = ? AND t.status = 'open'
+    ORDER BY datetime(t.checked_in_at) DESC
+    LIMIT 1
+  `).get(userId);
+}
+
 function getOpenTripByVehicle(vehicleId) {
   return db.prepare(`
     SELECT id, user_id AS userId, vehicle_id AS vehicleId, checked_in_at AS checkedInAt, start_odometer AS startOdometer
@@ -289,7 +303,7 @@ export function getDashboardData(currentUser) {
     LIMIT 6
   `).all(...scoped.values);
 
-  return { counts: { ...counts, activeUsers: activeUsers.activeUsers }, summary, recentTrips, activeTrips, currentOpenTrip: getOpenTripByUser(currentUser.id) };
+  return { counts: { ...counts, activeUsers: activeUsers.activeUsers }, summary, recentTrips, activeTrips, currentOpenTrip: getDetailedOpenTripByUser(currentUser.id) };
 }
 
 export function listVehicles(includeInactive = true) {
@@ -493,6 +507,6 @@ export function getReferenceData(currentUser) {
     vehicles: listVehicles(currentUser.role === "admin"),
     users: currentUser.role === "admin" ? listUsers() : [],
     openTrips: listOpenTrips(currentUser),
-    currentOpenTrip: getOpenTripByUser(currentUser.id)
+    currentOpenTrip: getDetailedOpenTripByUser(currentUser.id)
   };
 }
