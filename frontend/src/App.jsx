@@ -72,6 +72,16 @@ function App() {
   return <AuthenticatedApp session={session} onLogout={() => setSession(null)} onSessionChange={setSession} />;
 }
 
+function ScrollToTop() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [location.pathname]);
+
+  return null;
+}
+
 function LoginPage({ onLogin }) {
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
@@ -168,6 +178,7 @@ function AuthenticatedApp({ session, onLogout, onSessionChange }) {
           </div>
         </aside>
         <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6">
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<DashboardPage session={session} />} />
             <Route path="/checkin" element={<CheckinPage />} />
@@ -548,7 +559,6 @@ function CheckoutPage() {
               <ReadOnlyField label="Veiculo em uso" value={`${references.currentOpenTrip.vehicleModel} - ${references.currentOpenTrip.vehiclePlate}`} />
               <ReadOnlyField label="Proprietario" value={references.currentOpenTrip.vehicleOwnerName} />
               <ReadOnlyField label="Observacao do veiculo" value={references.currentOpenTrip.vehicleNotes || "Sem observacoes do veiculo."} />
-              <ReadOnlyField label="Data/hora da operacao" value="Definida automaticamente pelo servidor" />
               <Field label="KM final" type="number" value={form.endOdometer} onChange={(value) => setForm((current) => ({ ...current, endOdometer: value }))} required={false} />
               <Field label="Combustivel final" value={form.fuelLevelEnd} onChange={(value) => setForm((current) => ({ ...current, fuelLevelEnd: value }))} required={false} />
               <TextArea label="Observacoes da devolucao" value={form.checkoutNotes} onChange={(value) => setForm((current) => ({ ...current, checkoutNotes: value }))} className="md:col-span-2" />
@@ -592,9 +602,8 @@ function CheckinPage() {
         <Panel title="Retirar veiculo" subtitle="Selecione apenas o veiculo. O restante e registrado automaticamente.">
           <form onSubmit={handleSubmit} className="grid gap-4">
             <SelectField label="Veiculo" value={form.vehicleId} onChange={(value) => setForm((current) => ({ ...current, vehicleId: value }))} options={references.vehicles.filter((vehicle) => vehicle.status !== "maintenance" && vehicle.status !== "inactive").map((vehicle) => ({ value: vehicle.id, label: `${vehicle.model} - ${vehicle.plate}` }))} />
-            <ReadOnlyField label="Motorista" value="Usuario logado" />
-            <ReadOnlyField label="Data/hora da operacao" value="Definida automaticamente pelo servidor" />
-            <TextArea label="Observacoes da retirada" value={form.checkinNotes} onChange={(value) => setForm((current) => ({ ...current, checkinNotes: value }))} />
+            {form.vehicleId ? <ReadOnlyField label="Observacao do veiculo" value={references.vehicles.find((vehicle) => String(vehicle.id) === String(form.vehicleId))?.notes || "Sem observacoes do veiculo."} /> : null}
+            <TextArea label="Motivo da retirada" value={form.checkinNotes} onChange={(value) => setForm((current) => ({ ...current, checkinNotes: value }))} />
             <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
               <div>Se outro usuario tiver esquecido de devolver esse veiculo, o sistema fara CHECK-OUT automatico.</div>
               <div>Um usuario nao pode retirar mais de um veiculo ao mesmo tempo.</div>
