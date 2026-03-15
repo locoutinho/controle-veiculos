@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowRight,
+  BadgeCheck,
   CarFront,
   ClipboardList,
+  LockKeyhole,
   Trash2,
   Gauge,
   History,
@@ -15,6 +17,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  UserRound,
   Users,
   LayoutDashboard
 } from "lucide-react";
@@ -103,42 +106,128 @@ function LoginPage({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,118,110,0.18),_transparent_40%),linear-gradient(180deg,_#f8fafc,_#dbeafe)] px-4 py-10">
-      <div className="mx-auto flex min-h-[80vh] max-w-6xl items-center">
-        <div className="grid w-full gap-8 overflow-hidden rounded-[32px] bg-white/85 shadow-panel backdrop-blur lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="flex flex-col justify-between bg-ink px-8 py-10 text-white sm:px-12">
-            <div>
-              <div className="mb-6 inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-medium">Controle profissional de frota</div>
-              <h1 className="max-w-md text-4xl font-semibold leading-tight">Check-in, check-out, usuarios e auditoria em um unico sistema.</h1>
-              <p className="mt-4 max-w-lg text-sm text-slate-300">Acesso por perfil, validacoes mais rigidas e operacao segura para uso interno.</p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <FeatureCard title="Perfis de acesso" text="Menus e rotas bloqueados por permissao." />
-              <FeatureCard title="Auditoria" text="Registro de cadastros, alteracoes e operacoes." />
-              <FeatureCard title="Fluxo seguro" text="Datas automaticas e validacoes no backend." />
+    <div className="min-h-screen bg-[#f2f4fb] px-3 py-3 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+      <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[30px] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.18)]">
+        <div className="relative flex items-center gap-4 overflow-hidden bg-[linear-gradient(180deg,#ef1927_0%,#cf1024_65%,#f03c4c_100%)] px-6 py-5 text-white sm:px-10 lg:px-14">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_45%),repeating-linear-gradient(180deg,rgba(255,255,255,0.05)_0,rgba(255,255,255,0.05)_2px,transparent_2px,transparent_22px)]" />
+          <div className="absolute bottom-0 left-0 right-0 h-[5px] bg-white/20 shadow-[0_-1px_0_rgba(255,255,255,0.25)]" />
+          <div className="relative flex items-center gap-4">
+            <CasamaxLogo className="w-[190px] sm:w-[240px] lg:w-[280px]" />
+            <span className="hidden text-2xl font-medium tracking-[0.01em] text-white/95 sm:inline lg:text-[2rem]">
+              Controle de Frota
+            </span>
+          </div>
+        </div>
+        <div className="grid min-h-[calc(100vh-120px)] bg-white lg:min-h-[760px] lg:grid-cols-[1.08fr_0.92fr]">
+          <div className="relative overflow-hidden bg-[#0d1630] px-6 py-10 text-white sm:px-10 sm:py-12 lg:px-14 lg:py-14">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_22%,rgba(55,130,255,0.42),transparent_20%),radial-gradient(circle_at_70%_58%,rgba(255,255,255,0.09),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))]" />
+            <div className="absolute inset-0 bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.016)_0,rgba(255,255,255,0.016)_2px,transparent_2px,transparent_16px)] opacity-40" />
+            <div className="relative flex h-full flex-col justify-between">
+              <div>
+                <div className="inline-flex rounded-full border border-white/10 bg-white/10 px-5 py-3 text-lg font-semibold tracking-[0.01em] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+                  Controle de Frota
+                </div>
+                <h1 className="mt-10 max-w-3xl text-[2.55rem] font-semibold leading-[1.08] tracking-[-0.03em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.35)] sm:text-[3.1rem] lg:text-[4.15rem]">
+                  Controle completo de veículos, usuários e auditoria em um único sistema.
+                </h1>
+                <p className="mt-7 max-w-2xl text-lg leading-9 text-white/88 sm:text-[1.65rem] sm:leading-[2.6rem] lg:text-[1.1rem] lg:leading-10">
+                  Sistema interno para controle de utilização de veículos, check-in, check-out e histórico de uso.
+                </p>
+              </div>
+              <div className="mt-10 grid gap-4 lg:grid-cols-3">
+                <LoginFeatureCard icon={ShieldCheck} title="Perfis de acesso" text="Controle de permissões por usuário." accent="text-[#ff6a74]" />
+                <LoginFeatureCard icon={BadgeCheck} title="Auditoria" text="Registro completo de movimentações." accent="text-white" />
+                <LoginFeatureCard icon={CarFront} title="Fluxo seguro" text="Check-in e check-out automáticos." accent="text-white" />
+              </div>
             </div>
           </div>
-          <div className="flex items-center px-6 py-10 sm:px-10">
-            <form onSubmit={handleSubmit} className="w-full space-y-5">
+          <div className="flex items-center bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.98),rgba(244,246,252,0.98)_55%,rgba(237,240,248,0.95))] px-5 py-8 sm:px-8 sm:py-10 lg:px-14">
+            <form onSubmit={handleSubmit} className="mx-auto w-full max-w-[510px] rounded-[34px] bg-white/82 p-7 shadow-[0_30px_70px_rgba(15,23,42,0.08)] backdrop-blur md:p-10 lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none">
               <div>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-mist px-4 py-2 text-sm font-medium text-accent">
-                  <ShieldCheck size={16} />
+                <div className="mb-7 inline-flex items-center gap-3 rounded-full bg-[#eef1f7] px-6 py-3 text-[1.05rem] font-semibold text-[#33446f] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+                  <ShieldCheck size={18} />
                   Login interno
                 </div>
-                <h2 className="text-2xl font-semibold text-slate-900">Entrar no sistema</h2>
-                <p className="mt-2 text-sm text-slate-500">Entre com seu usuario e senha para acessar o sistema.</p>
+                <h2 className="text-[2.55rem] font-semibold tracking-[-0.03em] text-[#1f2a4a] sm:text-[2.9rem] lg:text-[3.05rem]">Entrar no sistema</h2>
+                <p className="mt-3 text-lg leading-8 text-[#64708d] sm:text-[1.15rem]">Entre com seu usuário e senha para acessar o sistema.</p>
               </div>
-              <Field label="Usuario" value={form.username} onChange={(value) => setForm((current) => ({ ...current, username: value }))} />
-              <PasswordField label="Senha" value={form.password} onChange={(value) => setForm((current) => ({ ...current, password: value }))} showPassword={showPassword} onTogglePassword={() => setShowPassword((current) => !current)} />
-              {error ? <Alert kind="error" message={error} /> : null}
-              <button type="submit" disabled={loading} className="w-full rounded-2xl bg-ink px-4 py-3 font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400">
-                {loading ? "Entrando..." : "Acessar"}
-              </button>
+              <div className="mt-9 space-y-6">
+                <LoginTextField label="Usuário" icon={UserRound} value={form.username} onChange={(value) => setForm((current) => ({ ...current, username: value }))} />
+                <LoginPasswordField label="Senha" icon={LockKeyhole} value={form.password} onChange={(value) => setForm((current) => ({ ...current, password: value }))} showPassword={showPassword} onTogglePassword={() => setShowPassword((current) => !current)} />
+                {error ? <Alert kind="error" message={error} /> : null}
+                <button type="submit" disabled={loading} className="w-full rounded-[22px] bg-[linear-gradient(180deg,#ff3746_0%,#dc1326_100%)] px-6 py-4 text-[1.1rem] font-semibold text-white shadow-[0_16px_30px_rgba(220,19,38,0.28)] transition hover:scale-[1.01] hover:shadow-[0_20px_34px_rgba(220,19,38,0.34)] disabled:cursor-not-allowed disabled:opacity-60">
+                  {loading ? "Entrando..." : "Acessar"}
+                </button>
+              </div>
             </form>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function CasamaxLogo({ className = "" }) {
+  return (
+    <div className={`flex items-center gap-3 ${className}`}>
+      <span className="text-[2.15rem] font-black uppercase leading-none tracking-[-0.06em] text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)] sm:text-[2.7rem] lg:text-[3.4rem]">
+        CASAMA
+      </span>
+      <span className="relative inline-flex h-[2.55rem] w-[2.55rem] items-center justify-center rounded-full bg-[#ff1c1c] shadow-[0_8px_18px_rgba(0,0,0,0.25)] sm:h-[3rem] sm:w-[3rem] lg:h-[4rem] lg:w-[4rem]">
+        <span className="absolute h-[74%] w-[19%] -rotate-[26deg] rounded-full bg-[#091224]" />
+        <span className="absolute h-[18%] w-[68%] rotate-[6deg] rounded-full bg-white" />
+      </span>
+      <span className="sr-only">CASAMAX</span>
+    </div>
+  );
+}
+
+function LoginFeatureCard({ icon: Icon, title, text, accent = "text-white" }) {
+  return (
+    <div className="rounded-[28px] border border-white/14 bg-white/[0.06] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+      <div className="flex items-start gap-4">
+        <div className={`mt-1 rounded-2xl bg-white/10 p-2.5 ${accent}`}>
+          <Icon size={22} />
+        </div>
+        <div>
+          <div className="text-[1.55rem] font-semibold tracking-[-0.02em] text-white lg:text-[1.05rem]">{title}</div>
+          <p className="mt-2 text-lg leading-8 text-white/80 lg:text-[0.98rem] lg:leading-7">{text}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoginTextField({ label, value, onChange, icon: Icon }) {
+  return (
+    <label className="grid gap-3 text-[#2c3550]">
+      <span className="text-[1.08rem] font-semibold sm:text-[1.22rem]">{label}</span>
+      <div className="flex items-center rounded-[22px] border border-[#d7ddeb] bg-white px-5 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.04)] transition focus-within:border-[#db1f31] focus-within:shadow-[0_14px_28px_rgba(219,31,49,0.12)]">
+        <Icon size={24} className="mr-4 text-[#445071]" />
+        <input value={value} onChange={(event) => onChange(event.target.value)} className="w-full border-none bg-transparent text-lg text-[#1f2a4a] outline-none" required />
+      </div>
+    </label>
+  );
+}
+
+function LoginPasswordField({ label, value, onChange, showPassword, onTogglePassword, icon: Icon }) {
+  return (
+    <label className="grid gap-3 text-[#2c3550]">
+      <span className="text-[1.08rem] font-semibold sm:text-[1.22rem]">{label}</span>
+      <div className="flex items-center rounded-[22px] border border-[#d7ddeb] bg-white px-5 py-4 shadow-[0_8px_20px_rgba(15,23,42,0.04)] transition focus-within:border-[#db1f31] focus-within:shadow-[0_14px_28px_rgba(219,31,49,0.12)]">
+        <Icon size={24} className="mr-4 text-[#445071]" />
+        <input
+          type={showPassword ? "text" : "password"}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full border-none bg-transparent text-lg text-[#1f2a4a] outline-none"
+          required
+        />
+        <button type="button" onClick={onTogglePassword} className="ml-4 text-[#33446f] transition hover:text-[#db1f31]">
+          {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
+        </button>
+      </div>
+    </label>
   );
 }
 
