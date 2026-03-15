@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: controle-veiculos-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm run start:render
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: ALLOWED_ORIGIN
+        sync: false
+      - key: TOKEN_SECRET
+        generateValue: true
+
+  - type: web
+    name: controle-veiculos-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: VITE_API_URL
+        sync: false
