@@ -53,6 +53,7 @@ export const api = {
     );
     return request(`/trips?${params.toString()}`);
   },
+  deleteTrip: (id) => request(`/trips/${id}`, { method: "DELETE" }),
   checkout: (payload) => request("/trips/checkout", { method: "POST", body: JSON.stringify(payload) }),
   checkin: (payload) => request("/trips/checkin", { method: "POST", body: JSON.stringify(payload) })
 };

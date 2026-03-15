@@ -19,8 +19,8 @@ export function seedDatabase({ reset = false } = {}) {
   `);
 
   const insertVehicle = db.prepare(`
-    INSERT INTO vehicles (plate, model, brand, year, owner_name, status, notes, current_odometer, photo_url, fuel_type, maintenance_due_date)
-    VALUES (@plate, @model, @brand, @year, @owner_name, @status, @notes, @current_odometer, @photo_url, @fuel_type, @maintenance_due_date)
+    INSERT INTO vehicles (plate, model, brand, year, owner_name, owner_user_id, status, notes, current_odometer, photo_url, fuel_type, maintenance_due_date)
+    VALUES (@plate, @model, @brand, @year, @owner_name, @owner_user_id, @status, @notes, @current_odometer, @photo_url, @fuel_type, @maintenance_due_date)
   `);
 
   const insertTrip = db.prepare(`
@@ -45,7 +45,8 @@ export function seedDatabase({ reset = false } = {}) {
       model: "Strada Freedom",
       brand: "Fiat",
       year: 2023,
-      owner_name: "Empresa Alfa",
+      owner_name: "Usuario Operacional",
+      owner_user_id: 2,
       status: "available",
       notes: "Veiculo com documentos no porta-luvas.",
       current_odometer: 18450,
@@ -58,7 +59,8 @@ export function seedDatabase({ reset = false } = {}) {
       model: "Hilux SRX",
       brand: "Toyota",
       year: 2022,
-      owner_name: "Empresa Alfa",
+      owner_name: "Administrador do Sistema",
+      owner_user_id: 1,
       status: "in_use",
       notes: "Conferir kit de ferramentas antes da devolucao.",
       current_odometer: 42690,
@@ -71,7 +73,8 @@ export function seedDatabase({ reset = false } = {}) {
       model: "Onix LT",
       brand: "Chevrolet",
       year: 2021,
-      owner_name: "Locadora Parceira",
+      owner_name: "Usuario Operacional",
+      owner_user_id: 2,
       status: "maintenance",
       notes: "Em manutencao preventiva.",
       current_odometer: 35120,
@@ -84,7 +87,8 @@ export function seedDatabase({ reset = false } = {}) {
       model: "Ranger XLS",
       brand: "Ford",
       year: 2024,
-      owner_name: "Empresa Alfa",
+      owner_name: "Administrador do Sistema",
+      owner_user_id: 1,
       status: "available",
       notes: "Veiculo reserva para viagens longas.",
       current_odometer: 7840,

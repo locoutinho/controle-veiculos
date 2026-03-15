@@ -29,3 +29,10 @@ export function vehicleStatusLabel(status) {
 export function tripStatusLabel(status) {
   return status === "open" ? "Aberto" : "Fechado";
 }
+
+export function tripActionLabel(trip) {
+  if (trip.returnedToOwner) return "Retorno automatico ao proprietario";
+  if (trip.automaticCheckout || trip.ownerAutoCheckout) return "CHECK-OUT automatico";
+  if (trip.status === "open") return "CHECK-IN";
+  return "CHECK-OUT";
+}

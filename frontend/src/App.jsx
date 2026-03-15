@@ -4,6 +4,7 @@ import {
   ArrowRight,
   CarFront,
   ClipboardList,
+  Trash2,
   Gauge,
   History,
   KeyRound,
@@ -18,10 +19,10 @@ import {
   LayoutDashboard
 } from "lucide-react";
 import { api } from "./api";
-import { formatDate, formatDateTime, formatMinutes, tripStatusLabel, vehicleStatusLabel } from "./utils";
+import { formatDate, formatDateTime, formatMinutes, tripActionLabel, tripStatusLabel, vehicleStatusLabel } from "./utils";
 
 const emptyVehicle = {
-  ownerName: "",
+  ownerUserId: "",
   model: "",
   plate: "",
   brand: "",
@@ -164,7 +165,7 @@ function AuthenticatedApp({ session, onLogout, onSessionChange }) {
           </div>
           <nav className="grid gap-2">
             {menu.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.to === "/"} className={({ isActive }) => `flex items-center gap-3 rounded-2xl px-4 py-3 transition ${isActive ? "bg-white text-ink" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+              <NavLink key={item.to} to={item.to} end={item.to === "/"} className={({ isActive }) => `touch-manipulation flex items-center gap-3 rounded-2xl px-4 py-3 transition ${isActive ? "bg-white text-ink" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
                 <item.icon size={18} />
                 {item.label}
               </NavLink>
@@ -185,8 +186,8 @@ function AuthenticatedApp({ session, onLogout, onSessionChange }) {
             <Route path="/checkout" element={<CheckoutPage session={session} />} />
             <Route path="/historico" element={<HistoryPage session={session} />} />
             <Route path="/minha-conta" element={<AccountPage session={session} onSessionChange={onSessionChange} />} />
-            <Route path="/veiculos" element={<AdminRoute session={session}><VehiclesPage /></AdminRoute>} />
-            <Route path="/veiculos/:id" element={<AdminRoute session={session}><VehicleDetailsPage /></AdminRoute>} />
+            <Route path="/veiculos" element={<AdminRoute session={session}><VehiclesPage session={session} /></AdminRoute>} />
+            <Route path="/veiculos/:id" element={<AdminRoute session={session}><VehicleDetailsPage session={session} /></AdminRoute>} />
             <Route path="/usuarios" element={<AdminRoute session={session}><UsersPage /></AdminRoute>} />
             <Route path="/configuracoes" element={<AdminRoute session={session}><SettingsPage session={session} onSessionChange={onSessionChange} /></AdminRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -235,12 +236,12 @@ function DashboardPage({ session }) {
             </Panel>
             <Panel title="Veiculos ativos agora" subtitle="Utilizacoes em aberto acompanhadas em tempo real.">
               <div className="space-y-3">
-                {data.activeTrips.length === 0 ? <EmptyState text="Nenhum veiculo em uso neste momento." /> : data.activeTrips.map((trip) => <TripCard key={trip.id} trip={trip} />)}
+                {data.activeTrips.length === 0 ? <EmptyState text="Nenhum veiculo em uso neste momento." /> : data.activeTrips.map((trip) => <TripCard key={trip.id} trip={trip} currentUserId={session.user.id} />)}
               </div>
             </Panel>
           </div>
           <Panel title="Ultimas movimentacoes" subtitle="Resumo recente do historico operacional.">
-            <TripsTable trips={data.recentTrips} showOperators={session.user.role === "admin"} />
+            <TripsTable trips={data.recentTrips} showOperators={session.user.role === "admin"} currentUserId={session.user.id} />
           </Panel>
         </>
       )}
@@ -248,20 +249,29 @@ function DashboardPage({ session }) {
   );
 }
 
-function VehiclesPage() {
+function VehiclesPage({ session }) {
   const [vehicles, setVehicles] = useState([]);
+  const [owners, setOwners] = useState([]);
   const [form, setForm] = useState(emptyVehicle);
   const [editingId, setEditingId] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
-  const load = () => api.getVehicles().then(setVehicles).catch((err) => setFeedback(err.message));
+  const load = async () => {
+    try {
+      const [vehiclesResult, usersResult] = await Promise.all([api.getVehicles(), api.getUsers()]);
+      setVehicles(vehiclesResult);
+      setOwners(usersResult.filter((user) => user.status === "active"));
+    } catch (err) {
+      setFeedback(err.message);
+    }
+  };
   useEffect(() => { load(); }, []);
 
   const filtered = useMemo(() => vehicles.filter((vehicle) => {
     const term = search.toLowerCase();
-    return [vehicle.model, vehicle.brand, vehicle.plate, vehicle.status].some((item) => item.toLowerCase().includes(term));
+    return [vehicle.model, vehicle.brand, vehicle.plate, vehicle.status, vehicle.ownerFullName || vehicle.ownerName || ""].some((item) => item.toLowerCase().includes(term));
   }), [vehicles, search]);
 
   async function handleSubmit(event) {
@@ -292,7 +302,7 @@ function VehiclesPage() {
             <Field label="Modelo" value={form.model} onChange={(value) => setForm((current) => ({ ...current, model: value }))} />
             <Field label="Marca" value={form.brand} onChange={(value) => setForm((current) => ({ ...current, brand: value }))} />
             <Field label="Ano" type="number" value={form.year} onChange={(value) => setForm((current) => ({ ...current, year: value }))} />
-            <Field label="Proprietario" value={form.ownerName} onChange={(value) => setForm((current) => ({ ...current, ownerName: value }))} />
+            <SelectField label="Proprietario do veiculo" value={form.ownerUserId} onChange={(value) => setForm((current) => ({ ...current, ownerUserId: value }))} options={owners.map((user) => ({ value: user.id, label: `${user.fullName} (${user.username})` }))} />
             <SelectField label="Status" value={form.status} onChange={(value) => setForm((current) => ({ ...current, status: value }))} options={[{ value: "available", label: "Disponivel" }, { value: "in_use", label: "Em uso" }, { value: "maintenance", label: "Manutencao" }, { value: "inactive", label: "Inativo" }]} />
             <Field label="KM atual" type="number" value={form.currentOdometer} onChange={(value) => setForm((current) => ({ ...current, currentOdometer: value }))} />
             <Field label="Combustivel" value={form.fuelType} onChange={(value) => setForm((current) => ({ ...current, fuelType: value }))} required={false} />
@@ -319,8 +329,9 @@ function VehiclesPage() {
                 <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
                   <span>Ano {vehicle.year}</span>
                   <span>KM {vehicle.currentOdometer}</span>
-                  <span>{vehicle.ownerName}</span>
+                  <span>{vehicle.ownerFullName || vehicle.ownerName}</span>
                   <span>{vehicle.fuelType || "Sem combustivel"}</span>
+                  {Number(vehicle.ownerUserId) === Number(session.user.id) ? <span className="font-medium text-accent">Pertence a voce</span> : null}
                 </div>
                 <div className="mt-3 rounded-2xl bg-slate-50 p-3 text-sm text-slate-600">{vehicle.notes || "Sem observacoes do veiculo."}</div>
                 <div className="mt-4">
@@ -328,7 +339,7 @@ function VehiclesPage() {
                     event.stopPropagation();
                     setEditingId(vehicle.id);
                     setForm({
-                      ownerName: vehicle.ownerName,
+                      ownerUserId: String(vehicle.ownerUserId || ""),
                       model: vehicle.model,
                       plate: vehicle.plate,
                       brand: vehicle.brand,
@@ -559,6 +570,7 @@ function CheckoutPage({ session }) {
               <ReadOnlyField label="Usuario" value={session.user.fullName} />
               <ReadOnlyField label="Veiculo em uso" value={`${references.currentOpenTrip.vehicleModel} - ${references.currentOpenTrip.vehiclePlate}`} />
               <ReadOnlyField label="Proprietario" value={references.currentOpenTrip.vehicleOwnerName} />
+              <ReadOnlyField label="Usuario em uso" value={references.currentOpenTrip.userFullName} />
               <ReadOnlyField label="Observacao do veiculo" value={references.currentOpenTrip.vehicleNotes || "Sem observacoes do veiculo."} />
               <Field label="KM final" type="number" value={form.endOdometer} onChange={(value) => setForm((current) => ({ ...current, endOdometer: value }))} required={false} />
               <Field label="Combustivel final" value={form.fuelLevelEnd} onChange={(value) => setForm((current) => ({ ...current, fuelLevelEnd: value }))} required={false} />
@@ -568,7 +580,7 @@ function CheckoutPage({ session }) {
           )}
         </Panel>
         <Panel title="Status do usuario" subtitle="A interface mostra claramente se existe retirada aberta.">
-          {references.currentOpenTrip ? <TripCard trip={references.currentOpenTrip} /> : <EmptyState text="Nenhum CHECK-IN aberto para este usuario." />}
+          {references.currentOpenTrip ? <TripCard trip={references.currentOpenTrip} currentUserId={session.user.id} /> : <EmptyState text="Nenhum CHECK-IN aberto para este usuario." />}
         </Panel>
       </div>
     </PageShell>
@@ -603,18 +615,20 @@ function CheckinPage({ session }) {
         <Panel title="Retirar veiculo" subtitle="Selecione apenas o veiculo. O restante e registrado automaticamente.">
           <form onSubmit={handleSubmit} className="grid gap-4">
             <ReadOnlyField label="Usuario" value={session.user.fullName} />
-            <SelectField label="Veiculo" value={form.vehicleId} onChange={(value) => setForm((current) => ({ ...current, vehicleId: value }))} options={references.vehicles.filter((vehicle) => vehicle.status !== "maintenance" && vehicle.status !== "inactive").map((vehicle) => ({ value: vehicle.id, label: `${vehicle.model} - ${vehicle.plate}` }))} />
+            <SelectField label="Veiculo" value={form.vehicleId} onChange={(value) => setForm((current) => ({ ...current, vehicleId: value }))} options={references.vehicles.filter((vehicle) => vehicle.status !== "maintenance" && vehicle.status !== "inactive").map((vehicle) => ({ value: vehicle.id, label: `${vehicle.model} - ${vehicle.plate}${Number(vehicle.ownerUserId) === Number(session.user.id) ? " (seu veiculo)" : ""}` }))} />
+            {form.vehicleId ? <ReadOnlyField label="Proprietario do veiculo" value={references.vehicles.find((vehicle) => String(vehicle.id) === String(form.vehicleId))?.ownerFullName || "-"} /> : null}
             {form.vehicleId ? <ReadOnlyField label="Observacao do veiculo" value={references.vehicles.find((vehicle) => String(vehicle.id) === String(form.vehicleId))?.notes || "Sem observacoes do veiculo."} /> : null}
             <TextArea label="Motivo da retirada" value={form.checkinNotes} onChange={(value) => setForm((current) => ({ ...current, checkinNotes: value }))} />
             <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-              <div>Se outro usuario tiver esquecido de devolver esse veiculo, o sistema fara CHECK-OUT automatico.</div>
+              <div>Se outro usuario nao proprietario tiver esquecido de devolver esse veiculo, o sistema fara CHECK-OUT automatico.</div>
+              <div>Se o proprietario estiver usando o proprio veiculo, o sistema nao encerra esse uso automaticamente.</div>
               <div>Um usuario nao pode retirar mais de um veiculo ao mesmo tempo.</div>
             </div>
             <div><PrimaryButton type="submit">Registrar CHECK-IN</PrimaryButton></div>
           </form>
         </Panel>
         <Panel title="Meu status atual" subtitle="Mostra claramente se o usuario esta com veiculo em uso.">
-          {references.currentOpenTrip ? <TripCard trip={references.currentOpenTrip} /> : <EmptyState text="Nenhum veiculo em uso para este usuario." />}
+          {references.currentOpenTrip ? <TripCard trip={references.currentOpenTrip} currentUserId={session.user.id} /> : <EmptyState text="Nenhum veiculo em uso para este usuario." />}
         </Panel>
       </div>
     </PageShell>
@@ -641,6 +655,17 @@ function HistoryPage({ session }) {
     return [trip.vehicleModel, trip.vehiclePlate, trip.userFullName, trip.vehicleOwnerName || "", trip.vehicleNotes || "", trip.checkedInByName || "", trip.checkedOutByName || ""].some((item) => (item || "").toLowerCase().includes(term));
   }), [trips, search]);
 
+  async function handleDeleteTrip(trip) {
+    const confirmed = window.confirm(`Excluir o registro do veiculo ${trip.vehicleModel} - ${trip.vehiclePlate}?`);
+    if (!confirmed) return;
+    try {
+      await api.deleteTrip(trip.id);
+      setTrips((current) => current.filter((item) => item.id !== trip.id));
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   return (
     <PageShell title="Historico" subtitle="Consulta completa de CHECK-IN, CHECK-OUT e devolucoes automaticas.">
       {error ? <Alert kind="error" message={error} /> : null}
@@ -655,7 +680,7 @@ function HistoryPage({ session }) {
       </Panel>
       <Panel title="Movimentacoes" subtitle={`${filtered.length} registro(s) encontrado(s).`}>
         <SearchField value={search} onChange={setSearch} placeholder="Buscar por veiculo, usuario, proprietario, observacao ou operador" />
-        <TripsTable trips={filtered} showOperators={session.user.role === "admin"} />
+        <TripsTable trips={filtered} showOperators={session.user.role === "admin"} currentUserId={session.user.id} allowDelete={session.user.role === "admin"} onDeleteTrip={handleDeleteTrip} />
       </Panel>
     </PageShell>
   );
@@ -790,7 +815,7 @@ function SettingsPage({ session, onSessionChange }) {
   );
 }
 
-function VehicleDetailsPage() {
+function VehicleDetailsPage({ session }) {
   const { id } = useParams();
   const [vehicle, setVehicle] = useState(null);
   const [error, setError] = useState("");
@@ -807,15 +832,17 @@ function VehicleDetailsPage() {
           <Panel title={vehicle.model} subtitle={`${vehicle.brand} - ${vehicle.plate}`}>
             <div className="space-y-4 text-sm text-slate-600">
               <div className="flex items-center justify-between"><span>Status atual</span><StatusBadge status={vehicle.status}>{vehicleStatusLabel(vehicle.status)}</StatusBadge></div>
+              <div className="flex items-center justify-between"><span>Proprietario</span><strong className="text-slate-900">{vehicle.ownerFullName || vehicle.ownerName}</strong></div>
               <div className="flex items-center justify-between"><span>Ano</span><strong className="text-slate-900">{vehicle.year}</strong></div>
               <div className="flex items-center justify-between"><span>Quilometragem atual</span><strong className="text-slate-900">{vehicle.currentOdometer}</strong></div>
               <div className="flex items-center justify-between"><span>Combustivel</span><strong className="text-slate-900">{vehicle.fuelType || "-"}</strong></div>
               <div className="flex items-center justify-between"><span>Proxima manutencao</span><strong className="text-slate-900">{formatDate(vehicle.maintenanceDueDate)}</strong></div>
+              {Number(vehicle.ownerUserId) === Number(session.user.id) ? <div className="rounded-2xl bg-teal-50 px-4 py-3 text-teal-700">Este veiculo pertence ao usuario logado.</div> : null}
               <div><div className="mb-2 font-medium text-slate-900">Observacoes</div><p>{vehicle.notes || "Sem observacoes registradas."}</p></div>
             </div>
           </Panel>
           <Panel title="Historico recente" subtitle="Movimentacoes mais recentes vinculadas ao veiculo.">
-            <TripsTable trips={vehicle.recentTrips} showOperators />
+            <TripsTable trips={vehicle.recentTrips} showOperators currentUserId={session.user.id} />
           </Panel>
         </div>
       )}
@@ -823,7 +850,7 @@ function VehicleDetailsPage() {
   );
 }
 
-function TripsTable({ trips, showOperators = false }) {
+function TripsTable({ trips, showOperators = false, currentUserId = null, allowDelete = false, onDeleteTrip }) {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
@@ -831,25 +858,29 @@ function TripsTable({ trips, showOperators = false }) {
           <tr>
             <th className="pb-3 font-medium">Veiculo</th>
             <th className="pb-3 font-medium">Usuario</th>
+            <th className="pb-3 font-medium">Acao</th>
             <th className="pb-3 font-medium">Periodo</th>
             <th className="pb-3 font-medium">Detalhes</th>
             <th className="pb-3 font-medium">KM</th>
             <th className="pb-3 font-medium">Tempo</th>
             {showOperators ? <th className="pb-3 font-medium">Operadores</th> : null}
             <th className="pb-3 font-medium">Status</th>
+            {allowDelete ? <th className="pb-3 font-medium">Excluir</th> : null}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {trips.map((trip) => (
             <tr key={trip.id}>
-              <td className="py-3"><div className="font-medium text-slate-900">{trip.vehicleModel}</div><div className="text-slate-500">{trip.vehiclePlate}</div><div className="text-slate-500">{trip.vehicleOwnerName}</div><div className="text-slate-500">{trip.vehicleNotes || "Sem observacoes"}</div></td>
-              <td className="py-3">{trip.userFullName}</td>
+              <td className="py-3"><div className="font-medium text-slate-900">{trip.vehicleModel}</div><div className="text-slate-500">{trip.vehiclePlate}</div><div className="text-slate-500">Proprietario: {trip.vehicleOwnerName}</div><div className="text-slate-500">{trip.vehicleNotes || "Sem observacoes"}</div>{Number(trip.vehicleOwnerUserId) === Number(currentUserId) ? <div className="mt-2 text-xs font-medium text-accent">Pertence ao usuario logado</div> : null}</td>
+              <td className="py-3"><div>{trip.userFullName}</div><div className="text-slate-500">Em uso por: {trip.userFullName}</div></td>
+              <td className="py-3"><div>{tripActionLabel(trip)}</div><div className="text-slate-500">{trip.returnedToOwner ? "Veiculo retornou ao proprietario" : trip.ownerAutoCheckout ? "Uso de veiculo de outro usuario" : trip.automaticCheckout ? "Encerramento automatico por esquecimento" : "Fluxo direto"}</div></td>
               <td className="py-3"><div>CHECK-IN: {formatDateTime(trip.checkedInAt)}</div><div className="text-slate-500">CHECK-OUT: {formatDateTime(trip.checkedOutAt)}</div></td>
-              <td className="py-3"><div>{trip.automaticCheckout ? "CHECK-OUT automatico" : "Fluxo normal"}</div><div className="text-slate-500">{trip.automaticCheckoutReason || trip.checkoutNotes || trip.checkinNotes || "-"}</div></td>
+              <td className="py-3"><div>{trip.automaticCheckout ? "CHECK-OUT automatico" : trip.returnedToOwner ? "Retorno ao proprietario" : "Fluxo normal"}</div><div className="text-slate-500">{trip.returnedToOwnerReason || trip.ownerAutoCheckoutReason || trip.automaticCheckoutReason || trip.checkoutNotes || trip.checkinNotes || "-"}</div></td>
               <td className="py-3"><div>Inicial: {trip.startOdometer}</div><div className="text-slate-500">Final: {trip.endOdometer ?? "-"}</div><div className="text-slate-500">Rodado: {trip.distanceTraveled}</div></td>
               <td className="py-3">{formatMinutes(trip.usageMinutes)}</td>
               {showOperators ? <td className="py-3"><div>CHECK-IN: {trip.checkedInByName || "-"}</div><div className="text-slate-500">CHECK-OUT: {trip.checkedOutByName || "-"}</div></td> : null}
               <td className="py-3"><StatusBadge status={trip.status}>{trip.status === "open" ? "Em uso" : "Devolvido"}</StatusBadge></td>
+              {allowDelete ? <td className="py-3">{trip.status === "closed" ? <button type="button" onClick={() => onDeleteTrip?.(trip)} className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 px-3 py-2 text-rose-600 hover:bg-rose-50"><Trash2 size={16} />Excluir</button> : <span className="text-slate-400">Somente fechados</span>}</td> : null}
             </tr>
           ))}
         </tbody>
@@ -858,7 +889,7 @@ function TripsTable({ trips, showOperators = false }) {
   );
 }
 
-function TripCard({ trip }) {
+function TripCard({ trip, currentUserId = null }) {
   return (
     <div className="rounded-3xl border border-amber-100 bg-amber-50 p-4">
       <div className="flex items-start justify-between gap-3">
@@ -873,6 +904,8 @@ function TripCard({ trip }) {
         <div>KM inicial: {trip.startOdometer}</div>
         <div>Usuario: {trip.userFullName}</div>
         <div>Placa: {trip.vehiclePlate}</div>
+        <div>Proprietario: {trip.vehicleOwnerName}</div>
+        <div>{Number(trip.vehicleOwnerUserId) === Number(currentUserId) ? "Pertence ao usuario logado" : "Veiculo de outro usuario"}</div>
       </div>
       <div className="mt-3 rounded-2xl bg-white/70 p-3 text-sm text-slate-600">{trip.vehicleNotes || "Sem observacoes do veiculo."}</div>
     </div>
@@ -920,7 +953,7 @@ function FeatureCard({ title, text }) {
 
 function ActionCard({ title, text, buttonLabel, onClick, tone }) {
   return (
-    <button type="button" onClick={onClick} className="w-full rounded-3xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-accent/30">
+    <button type="button" onClick={onClick} className="touch-manipulation w-full rounded-3xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-accent/30">
       <div className="font-semibold text-slate-900">{title}</div>
       <p className="mt-2 text-sm text-slate-600">{text}</p>
       <span className={`mt-4 inline-flex items-center gap-2 rounded-2xl ${tone} px-4 py-3 font-medium text-white`}>
@@ -1034,11 +1067,11 @@ function TextArea({ label, value, onChange, className = "" }) {
 }
 
 function PrimaryButton({ children, className = "", ...props }) {
-  return <button {...props} className={`rounded-2xl bg-ink px-4 py-3 font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 ${className}`}>{children}</button>;
+  return <button {...props} className={`touch-manipulation rounded-2xl bg-ink px-4 py-3 font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 ${className}`}>{children}</button>;
 }
 
 function SecondaryButton({ children, className = "", ...props }) {
-  return <button {...props} className={`rounded-2xl border border-slate-200 px-4 py-3 text-slate-600 hover:bg-slate-50 ${className}`}>{children}</button>;
+  return <button {...props} className={`touch-manipulation rounded-2xl border border-slate-200 px-4 py-3 text-slate-600 hover:bg-slate-50 ${className}`}>{children}</button>;
 }
 
 export default App;

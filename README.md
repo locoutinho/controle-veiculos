@@ -15,11 +15,22 @@ O usuario logado e automaticamente tratado como motorista.
 - perfis `admin` e `user`
 - `CHECK-IN` para retirar veiculo
 - `CHECK-OUT` para devolver veiculo
+- proprietario do veiculo obrigatoriamente vinculado a um usuario do sistema
 - usuario comum pode alterar a propria senha
 - administrador pode gerenciar usuarios, veiculos e configuracoes
 - observacoes do veiculo visiveis para todos
-- `CHECK-OUT` automatico quando outro usuario retira um veiculo esquecido
-- historico com usuario, veiculo, proprietario, observacao e indicador de automatico
+- `CHECK-OUT` automatico quando outro usuario nao proprietario retira um veiculo esquecido
+- retorno automatico ao proprietario quando um nao proprietario devolve o veiculo
+- historico com usuario, veiculo, proprietario, observacao, tipo de acao e indicador de automatico
+- exclusao administrativa de registros fechados do historico
+
+## Regras de proprietario
+
+- cada veiculo precisa ter um `Proprietario do veiculo` selecionado na lista de usuarios
+- o proprietario aparece nas telas de veiculo, retirada, devolucao e historico
+- quando um nao proprietario retira o veiculo, o historico registra `CHECK-OUT automatico por uso do veiculo por outro usuario`
+- quando um nao proprietario devolve o veiculo, o historico registra `Retorno automatico ao proprietario`
+- se o proprietario estiver usando o proprio veiculo, o sistema nao encerra esse uso automaticamente
 
 ## Usuarios de teste
 
@@ -51,6 +62,15 @@ npm run dev
 ```
 
 App: `http://localhost:5173`
+
+## Importante apos esta atualizacao
+
+Como a estrutura do banco foi ampliada para vincular o proprietario a um usuario do sistema, e recomendado recriar os dados locais:
+
+```bash
+cd backend
+npm run seed
+```
 
 ## Deploy gratuito no Render
 
@@ -98,3 +118,5 @@ Isso significa:
 4. testar bloqueio de segundo veiculo para o mesmo usuario
 5. testar `CHECK-OUT` automatico ao retirar veiculo em uso por outro usuario
 6. entrar com `usuario` e alterar a propria senha em `Minha conta`
+7. testar retirada de veiculo de outro usuario e conferir `Retorno automatico ao proprietario` no historico
+8. testar exclusao de um registro fechado do historico com `admin`

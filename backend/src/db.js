@@ -15,6 +15,15 @@ if (!fs.existsSync(dataDir)) {
 export const db = new Database(databaseFile);
 db.pragma("foreign_keys = ON");
 
+function ensureColumn(tableName, columnName, definition, backfillSql = null) {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  if (columns.some((column) => column.name === columnName)) return;
+  db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  if (backfillSql) {
+    db.exec(backfillSql);
+  }
+}
+
 export function initializeDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -35,6 +44,7 @@ export function initializeDatabase() {
       brand TEXT NOT NULL,
       year INTEGER NOT NULL,
       owner_name TEXT NOT NULL,
+      owner_user_id INTEGER,
       status TEXT NOT NULL CHECK (status IN ('available', 'in_use', 'maintenance', 'inactive')),
       notes TEXT,
       current_odometer INTEGER NOT NULL DEFAULT 0,
@@ -64,6 +74,11 @@ export function initializeDatabase() {
       status TEXT NOT NULL CHECK (status IN ('open', 'closed')) DEFAULT 'open',
       automatic_checkout INTEGER NOT NULL DEFAULT 0,
       automatic_checkout_reason TEXT DEFAULT '',
+      owner_auto_checkout INTEGER NOT NULL DEFAULT 0,
+      owner_auto_checkout_reason TEXT DEFAULT '',
+      returned_to_owner INTEGER NOT NULL DEFAULT 0,
+      returned_to_owner_reason TEXT DEFAULT '',
+      returned_to_owner_at TEXT,
       fuel_level_start TEXT DEFAULT '',
       fuel_level_end TEXT DEFAULT '',
       driver_signature_url TEXT DEFAULT '',
@@ -98,8 +113,27 @@ export function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_trips_vehicle_id ON trips(vehicle_id);
     CREATE INDEX IF NOT EXISTS idx_trips_user_id ON trips(user_id);
     CREATE INDEX IF NOT EXISTS idx_trips_status ON trips(status);
+    CREATE INDEX IF NOT EXISTS idx_vehicles_owner_user_id ON vehicles(owner_user_id);
     CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_user_id ON audit_logs(actor_user_id);
   `);
+
+  ensureColumn(
+    "vehicles",
+    "owner_user_id",
+    "INTEGER",
+    `
+      UPDATE vehicles
+      SET owner_user_id = (
+        SELECT id FROM users ORDER BY CASE WHEN role = 'admin' THEN 0 ELSE 1 END, id LIMIT 1
+      )
+      WHERE owner_user_id IS NULL
+    `
+  );
+  ensureColumn("trips", "owner_auto_checkout", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn("trips", "owner_auto_checkout_reason", "TEXT DEFAULT ''");
+  ensureColumn("trips", "returned_to_owner", "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn("trips", "returned_to_owner_reason", "TEXT DEFAULT ''");
+  ensureColumn("trips", "returned_to_owner_at", "TEXT");
 
   db.prepare(`
     INSERT INTO system_settings (id, company_name, allow_user_full_history, allow_user_dashboard_full, preferences_json)

@@ -10,6 +10,7 @@ import {
   checkoutVehicle,
   createUser,
   createVehicle,
+  deleteTripHistory,
   getDashboardData,
   getReferenceData,
   getSettings,
@@ -144,6 +145,14 @@ app.put("/api/settings", authRequired, adminRequired, (req, res) => {
 
 app.get("/api/audit-logs", authRequired, adminRequired, (_req, res) => res.json(listAuditLogs()));
 app.get("/api/trips", authRequired, (req, res) => res.json(listTrips(req.user, req.query)));
+app.delete("/api/trips/:id", authRequired, adminRequired, (req, res) => {
+  try {
+    deleteTripHistory(req.user.id, req.params.id);
+    res.status(204).send();
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
 
 app.post("/api/trips/checkin", authRequired, (req, res) => {
   try {

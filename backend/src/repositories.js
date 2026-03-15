@@ -7,9 +7,10 @@ const userFields = `
 `;
 
 const vehicleFields = `
-  id, plate, model, brand, year, owner_name AS ownerName, status, notes,
-  current_odometer AS currentOdometer, photo_url AS photoUrl, fuel_type AS fuelType,
-  maintenance_due_date AS maintenanceDueDate, created_at AS createdAt, updated_at AS updatedAt
+  v.id, v.plate, v.model, v.brand, v.year, v.owner_name AS ownerName, v.owner_user_id AS ownerUserId, v.status, v.notes,
+  v.current_odometer AS currentOdometer, v.photo_url AS photoUrl, v.fuel_type AS fuelType,
+  v.maintenance_due_date AS maintenanceDueDate, v.created_at AS createdAt, v.updated_at AS updatedAt,
+  owner.full_name AS ownerFullName, owner.username AS ownerUsername
 `;
 
 const tripSelect = `
@@ -31,6 +32,11 @@ const tripSelect = `
   t.status,
   t.automatic_checkout AS automaticCheckout,
   t.automatic_checkout_reason AS automaticCheckoutReason,
+  t.owner_auto_checkout AS ownerAutoCheckout,
+  t.owner_auto_checkout_reason AS ownerAutoCheckoutReason,
+  t.returned_to_owner AS returnedToOwner,
+  t.returned_to_owner_reason AS returnedToOwnerReason,
+  t.returned_to_owner_at AS returnedToOwnerAt,
   u.full_name AS userFullName,
   u.username AS userUsername,
   ci.full_name AS checkedInByName,
@@ -38,7 +44,9 @@ const tripSelect = `
   v.plate AS vehiclePlate,
   v.model AS vehicleModel,
   v.brand AS vehicleBrand,
-  v.owner_name AS vehicleOwnerName,
+  v.owner_user_id AS vehicleOwnerUserId,
+  owner.full_name AS vehicleOwnerName,
+  owner.username AS vehicleOwnerUsername,
   v.notes AS vehicleNotes
 `;
 
@@ -57,6 +65,27 @@ function getSettingsRow() {
     FROM system_settings
     WHERE id = 1
   `).get();
+}
+
+function getSystemDefaultOwnerId() {
+  return db.prepare(`
+    SELECT id
+    FROM users
+    WHERE status = 'active'
+    ORDER BY CASE WHEN role = 'admin' THEN 0 ELSE 1 END, id
+    LIMIT 1
+  `).get()?.id || null;
+}
+
+function getValidOwner(ownerUserId) {
+  const owner = db.prepare(`
+    SELECT id, full_name AS fullName, username, status
+    FROM users
+    WHERE id = ?
+  `).get(ownerUserId);
+  if (!owner) throw new Error("Selecione um proprietario valido para o veiculo.");
+  if (owner.status !== "active") throw new Error("O proprietario do veiculo precisa ser um usuario ativo.");
+  return owner;
 }
 
 function mapSettings(row) {
@@ -95,6 +124,7 @@ function getDetailedOpenTripByUser(userId) {
     JOIN users ci ON ci.id = t.checked_in_by_user_id
     LEFT JOIN users co ON co.id = t.checked_out_by_user_id
     JOIN vehicles v ON v.id = t.vehicle_id
+    LEFT JOIN users owner ON owner.id = v.owner_user_id
     WHERE t.user_id = ? AND t.status = 'open'
     ORDER BY datetime(t.checked_in_at) DESC
     LIMIT 1
@@ -107,6 +137,19 @@ function getOpenTripByVehicle(vehicleId) {
     FROM trips
     WHERE vehicle_id = ? AND status = 'open'
   `).get(vehicleId);
+}
+
+function getTripWithDetailsById(tripId) {
+  return db.prepare(`
+    SELECT ${tripSelect}
+    FROM trips t
+    JOIN users u ON u.id = t.user_id
+    JOIN users ci ON ci.id = t.checked_in_by_user_id
+    LEFT JOIN users co ON co.id = t.checked_out_by_user_id
+    JOIN vehicles v ON v.id = t.vehicle_id
+    LEFT JOIN users owner ON owner.id = v.owner_user_id
+    WHERE t.id = ?
+  `).get(tripId);
 }
 
 function closeTrip({ tripId, actorUserId, endOdometer, automatic, reason, checkoutNotes }) {
@@ -286,6 +329,7 @@ export function getDashboardData(currentUser) {
     JOIN users ci ON ci.id = t.checked_in_by_user_id
     LEFT JOIN users co ON co.id = t.checked_out_by_user_id
     JOIN vehicles v ON v.id = t.vehicle_id
+    LEFT JOIN users owner ON owner.id = v.owner_user_id
     WHERE 1 = 1 ${scoped.clause}
     ORDER BY datetime(t.checked_in_at) DESC
     LIMIT 8
@@ -298,6 +342,7 @@ export function getDashboardData(currentUser) {
     JOIN users ci ON ci.id = t.checked_in_by_user_id
     LEFT JOIN users co ON co.id = t.checked_out_by_user_id
     JOIN vehicles v ON v.id = t.vehicle_id
+    LEFT JOIN users owner ON owner.id = v.owner_user_id
     WHERE t.status = 'open' ${scoped.clause}
     ORDER BY datetime(t.checked_in_at) DESC
     LIMIT 6
@@ -308,11 +353,22 @@ export function getDashboardData(currentUser) {
 
 export function listVehicles(includeInactive = true) {
   const where = includeInactive ? "" : "WHERE status != 'inactive'";
-  return db.prepare(`SELECT ${vehicleFields} FROM vehicles ${where} ORDER BY model`).all();
+  return db.prepare(`
+    SELECT ${vehicleFields}
+    FROM vehicles v
+    LEFT JOIN users owner ON owner.id = v.owner_user_id
+    ${where.replace("status", "v.status")}
+    ORDER BY v.model
+  `).all();
 }
 
 export function getVehicleById(id) {
-  const vehicle = db.prepare(`SELECT ${vehicleFields} FROM vehicles WHERE id = ?`).get(id);
+  const vehicle = db.prepare(`
+    SELECT ${vehicleFields}
+    FROM vehicles v
+    LEFT JOIN users owner ON owner.id = v.owner_user_id
+    WHERE v.id = ?
+  `).get(id);
   if (!vehicle) return null;
   const recentTrips = db.prepare(`
     SELECT ${tripSelect}
@@ -321,6 +377,7 @@ export function getVehicleById(id) {
     JOIN users ci ON ci.id = t.checked_in_by_user_id
     LEFT JOIN users co ON co.id = t.checked_out_by_user_id
     JOIN vehicles v ON v.id = t.vehicle_id
+    LEFT JOIN users owner ON owner.id = v.owner_user_id
     WHERE t.vehicle_id = ?
     ORDER BY datetime(t.checked_in_at) DESC
     LIMIT 8
@@ -329,15 +386,17 @@ export function getVehicleById(id) {
 }
 
 export function createVehicle(actorUserId, data) {
+  const owner = getValidOwner(data.ownerUserId);
   const result = db.prepare(`
-    INSERT INTO vehicles (plate, model, brand, year, owner_name, status, notes, current_odometer, photo_url, fuel_type, maintenance_due_date)
-    VALUES (@plate, @model, @brand, @year, @ownerName, @status, @notes, @currentOdometer, @photoUrl, @fuelType, @maintenanceDueDate)
+    INSERT INTO vehicles (plate, model, brand, year, owner_name, owner_user_id, status, notes, current_odometer, photo_url, fuel_type, maintenance_due_date)
+    VALUES (@plate, @model, @brand, @year, @ownerName, @ownerUserId, @status, @notes, @currentOdometer, @photoUrl, @fuelType, @maintenanceDueDate)
   `).run({
     plate: data.plate,
     model: data.model,
     brand: data.brand,
     year: Number(data.year),
-    ownerName: data.ownerName,
+    ownerName: owner.fullName,
+    ownerUserId: Number(data.ownerUserId),
     status: data.status,
     notes: data.notes || "",
     currentOdometer: Number(data.currentOdometer || 0),
@@ -345,14 +404,15 @@ export function createVehicle(actorUserId, data) {
     fuelType: data.fuelType || "",
     maintenanceDueDate: data.maintenanceDueDate || ""
   });
-  logAudit(actorUserId, "create_vehicle", "vehicle", result.lastInsertRowid, `Veiculo ${data.plate} cadastrado.`);
+  logAudit(actorUserId, "create_vehicle", "vehicle", result.lastInsertRowid, `Veiculo ${data.plate} cadastrado para ${owner.fullName}.`);
   return getVehicleById(result.lastInsertRowid);
 }
 
 export function updateVehicle(actorUserId, id, data) {
+  const owner = getValidOwner(data.ownerUserId);
   db.prepare(`
     UPDATE vehicles
-    SET plate = @plate, model = @model, brand = @brand, year = @year, owner_name = @ownerName,
+    SET plate = @plate, model = @model, brand = @brand, year = @year, owner_name = @ownerName, owner_user_id = @ownerUserId,
         status = @status, notes = @notes, current_odometer = @currentOdometer, photo_url = @photoUrl,
         fuel_type = @fuelType, maintenance_due_date = @maintenanceDueDate, updated_at = CURRENT_TIMESTAMP
     WHERE id = @id
@@ -362,7 +422,8 @@ export function updateVehicle(actorUserId, id, data) {
     model: data.model,
     brand: data.brand,
     year: Number(data.year),
-    ownerName: data.ownerName,
+    ownerName: owner.fullName,
+    ownerUserId: Number(data.ownerUserId),
     status: data.status,
     notes: data.notes || "",
     currentOdometer: Number(data.currentOdometer || 0),
@@ -370,7 +431,7 @@ export function updateVehicle(actorUserId, id, data) {
     fuelType: data.fuelType || "",
     maintenanceDueDate: data.maintenanceDueDate || ""
   });
-  logAudit(actorUserId, "update_vehicle", "vehicle", id, `Veiculo ${data.plate} atualizado.`);
+  logAudit(actorUserId, "update_vehicle", "vehicle", id, `Veiculo ${data.plate} atualizado. Proprietario: ${owner.fullName}.`);
   return getVehicleById(id);
 }
 
@@ -393,6 +454,7 @@ export function listTrips(currentUser, filters = {}) {
     JOIN users ci ON ci.id = t.checked_in_by_user_id
     LEFT JOIN users co ON co.id = t.checked_out_by_user_id
     JOIN vehicles v ON v.id = t.vehicle_id
+    LEFT JOIN users owner ON owner.id = v.owner_user_id
     ${where}
     ORDER BY datetime(t.checked_in_at) DESC
   `).all(...scoped.values, ...values);
@@ -407,6 +469,7 @@ export function listOpenTrips(currentUser) {
     JOIN users ci ON ci.id = t.checked_in_by_user_id
     LEFT JOIN users co ON co.id = t.checked_out_by_user_id
     JOIN vehicles v ON v.id = t.vehicle_id
+    LEFT JOIN users owner ON owner.id = v.owner_user_id
     WHERE t.status = 'open' ${scoped.clause}
     ORDER BY datetime(t.checked_in_at) DESC
   `).all(...scoped.values);
@@ -417,14 +480,26 @@ export function checkinVehicle(actorUserId, data) {
   const userOpenTrip = getOpenTripByUser(actorUserId);
   if (userOpenTrip) throw new Error("Voce ja esta com um veiculo em uso. Faca o check-out antes de retirar outro.");
 
-  const vehicle = db.prepare(`SELECT id, status, current_odometer AS currentOdometer FROM vehicles WHERE id = ?`).get(data.vehicleId);
+  const vehicle = db.prepare(`
+    SELECT id, status, current_odometer AS currentOdometer, owner_user_id AS ownerUserId, owner_name AS ownerName
+    FROM vehicles
+    WHERE id = ?
+  `).get(data.vehicleId);
   if (!vehicle) throw new Error("Veiculo nao encontrado.");
   if (vehicle.status === "maintenance") throw new Error("Este veiculo esta em manutencao.");
   if (vehicle.status === "inactive") throw new Error("Este veiculo esta inativo.");
+  if (!vehicle.ownerUserId) {
+    const defaultOwnerId = getSystemDefaultOwnerId();
+    db.prepare(`UPDATE vehicles SET owner_user_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(defaultOwnerId, data.vehicleId);
+    vehicle.ownerUserId = defaultOwnerId;
+  }
 
   const vehicleOpenTrip = getOpenTripByVehicle(data.vehicleId);
   const transaction = db.transaction(() => {
     if (vehicleOpenTrip && vehicleOpenTrip.userId !== actorUserId) {
+      if (vehicleOpenTrip.userId === vehicle.ownerUserId) {
+        throw new Error("O proprietario esta usando este veiculo no momento. O sistema nao encerra automaticamente o uso do proprietario.");
+      }
       closeTrip({
         tripId: vehicleOpenTrip.id,
         actorUserId,
@@ -452,25 +527,30 @@ export function checkinVehicle(actorUserId, data) {
       checkinNotes: data.checkinNotes || ""
     });
 
+    if (Number(actorUserId) !== Number(vehicle.ownerUserId)) {
+      db.prepare(`
+        UPDATE trips
+        SET owner_auto_checkout = 1,
+            owner_auto_checkout_reason = @reason,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = @tripId
+      `).run({
+        tripId: result.lastInsertRowid,
+        reason: "CHECK-OUT automatico por uso do veiculo por outro usuario."
+      });
+    }
+
     db.prepare(`UPDATE vehicles SET status = 'in_use', updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(data.vehicleId);
     logAudit(actorUserId, "checkin_vehicle", "trip", result.lastInsertRowid, `CHECK-IN do veiculo ${data.vehicleId}.`);
     return result.lastInsertRowid;
   });
 
   const tripId = transaction();
-  return db.prepare(`
-    SELECT ${tripSelect}
-    FROM trips t
-    JOIN users u ON u.id = t.user_id
-    JOIN users ci ON ci.id = t.checked_in_by_user_id
-    LEFT JOIN users co ON co.id = t.checked_out_by_user_id
-    JOIN vehicles v ON v.id = t.vehicle_id
-    WHERE t.id = ?
-  `).get(tripId);
+  return getTripWithDetailsById(tripId);
 }
 
 export function checkoutVehicle(actorUserId, data) {
-  const trip = getOpenTripByUser(actorUserId);
+  const trip = getDetailedOpenTripByUser(actorUserId);
   if (!trip) throw new Error("Voce nao possui nenhum veiculo em uso para devolver.");
 
   const vehicle = db.prepare(`SELECT id, current_odometer AS currentOdometer FROM vehicles WHERE id = ?`).get(trip.vehicleId);
@@ -488,15 +568,31 @@ export function checkoutVehicle(actorUserId, data) {
     checkoutNotes: data.checkoutNotes || ""
   });
 
-  return db.prepare(`
-    SELECT ${tripSelect}
-    FROM trips t
-    JOIN users u ON u.id = t.user_id
-    JOIN users ci ON ci.id = t.checked_in_by_user_id
-    LEFT JOIN users co ON co.id = t.checked_out_by_user_id
-    JOIN vehicles v ON v.id = t.vehicle_id
-    WHERE t.id = ?
-  `).get(trip.id);
+  if (Number(actorUserId) !== Number(trip.vehicleOwnerUserId)) {
+    db.prepare(`
+      UPDATE trips
+      SET returned_to_owner = 1,
+          returned_to_owner_reason = @reason,
+          returned_to_owner_at = @returnedToOwnerAt,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = @tripId
+    `).run({
+      tripId: trip.id,
+      reason: "Retorno automatico ao proprietario. Veiculo ficou disponivel para novas retiradas.",
+      returnedToOwnerAt: dayjs().format()
+    });
+    logAudit(actorUserId, "return_to_owner", "trip", trip.id, `Veiculo ${trip.vehiclePlate} retornou automaticamente ao proprietario ${trip.vehicleOwnerName}.`);
+  }
+
+  return getTripWithDetailsById(trip.id);
+}
+
+export function deleteTripHistory(actorUserId, tripId) {
+  const trip = getTripWithDetailsById(tripId);
+  if (!trip) throw new Error("Registro de historico nao encontrado.");
+  if (trip.status === "open") throw new Error("Nao e possivel excluir uma utilizacao que ainda esta em aberto.");
+  db.prepare(`DELETE FROM trips WHERE id = ?`).run(tripId);
+  logAudit(actorUserId, "delete_trip_history", "trip", tripId, `Historico do veiculo ${trip.vehiclePlate} excluido pelo administrador.`);
 }
 
 export function getReferenceData(currentUser) {
@@ -505,7 +601,7 @@ export function getReferenceData(currentUser) {
     session: currentUser,
     settings,
     vehicles: listVehicles(currentUser.role === "admin"),
-    users: currentUser.role === "admin" ? listUsers() : [],
+    users: currentUser.role === "admin" ? listUsers().filter((user) => user.status === "active") : [],
     openTrips: listOpenTrips(currentUser),
     currentOpenTrip: getDetailedOpenTripByUser(currentUser.id)
   };
