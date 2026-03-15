@@ -9,6 +9,8 @@ import {
   KeyRound,
   LogIn,
   LogOut,
+  Eye,
+  EyeOff,
   Search,
   Settings,
   ShieldCheck,
@@ -71,9 +73,10 @@ function App() {
 }
 
 function LoginPage({ onLogin }) {
-  const [form, setForm] = useState({ username: "admin", password: "admin123" });
+  const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -112,18 +115,14 @@ function LoginPage({ onLogin }) {
                   Login interno
                 </div>
                 <h2 className="text-2xl font-semibold text-slate-900">Entrar no sistema</h2>
-                <p className="mt-2 text-sm text-slate-500">Use o administrador padrao ou um usuario comum criado pelo sistema.</p>
+                <p className="mt-2 text-sm text-slate-500">Entre com seu usuario e senha para acessar o sistema.</p>
               </div>
               <Field label="Usuario" value={form.username} onChange={(value) => setForm((current) => ({ ...current, username: value }))} />
-              <Field label="Senha" type="password" value={form.password} onChange={(value) => setForm((current) => ({ ...current, password: value }))} />
+              <PasswordField label="Senha" value={form.password} onChange={(value) => setForm((current) => ({ ...current, password: value }))} showPassword={showPassword} onTogglePassword={() => setShowPassword((current) => !current)} />
               {error ? <Alert kind="error" message={error} /> : null}
               <button type="submit" disabled={loading} className="w-full rounded-2xl bg-ink px-4 py-3 font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400">
                 {loading ? "Entrando..." : "Acessar"}
               </button>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                <div>Administrador: <strong>admin</strong> / <strong>admin123</strong></div>
-                <div>Usuario comum: <strong>usuario</strong> / <strong>usuario123</strong></div>
-              </div>
             </form>
           </div>
         </div>
@@ -960,6 +959,26 @@ function Field({ label, value, onChange, type = "text", required = true }) {
     <label className="grid gap-2 text-sm text-slate-600">
       <span className="font-medium text-slate-700">{label}</span>
       <input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-accent" required={required} />
+    </label>
+  );
+}
+
+function PasswordField({ label, value, onChange, showPassword, onTogglePassword, required = true }) {
+  return (
+    <label className="grid gap-2 text-sm text-slate-600">
+      <span className="font-medium text-slate-700">{label}</span>
+      <div className="flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-3">
+        <input
+          type={showPassword ? "text" : "password"}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className="w-full border-none bg-transparent text-slate-900 outline-none"
+          required={required}
+        />
+        <button type="button" onClick={onTogglePassword} className="text-slate-500 hover:text-slate-700">
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      </div>
     </label>
   );
 }
