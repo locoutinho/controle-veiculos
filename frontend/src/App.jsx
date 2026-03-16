@@ -109,28 +109,30 @@ function LoginPage({ onLogin }) {
     <div className="min-h-screen bg-[#f2f4fb] px-3 py-3 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[30px] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.18)]">
         <div className="relative flex items-center gap-4 overflow-hidden bg-[linear-gradient(180deg,#ef1927_0%,#cf1024_65%,#f03c4c_100%)] px-6 py-5 text-white sm:px-10 lg:px-14">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.22),transparent_45%),repeating-linear-gradient(180deg,rgba(255,255,255,0.05)_0,rgba(255,255,255,0.05)_2px,transparent_2px,transparent_22px)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_42%),linear-gradient(90deg,rgba(255,255,255,0.08),transparent_18%,transparent_82%,rgba(255,255,255,0.08))]" />
           <div className="absolute bottom-0 left-0 right-0 h-[5px] bg-white/20 shadow-[0_-1px_0_rgba(255,255,255,0.25)]" />
           <div className="relative flex items-center gap-4">
-            <CasamaxLogo className="w-[190px] sm:w-[240px] lg:w-[280px]" />
+            <div className="rounded-[22px] bg-white px-4 py-2 shadow-[0_14px_30px_rgba(0,0,0,0.18)] sm:px-5">
+              <CasamaxLogo className="w-[190px] sm:w-[240px] lg:w-[280px]" />
+            </div>
             <span className="hidden text-2xl font-medium tracking-[0.01em] text-white/95 sm:inline lg:text-[2rem]">
               Controle de Frota
             </span>
           </div>
         </div>
         <div className="grid min-h-[calc(100vh-120px)] bg-white lg:min-h-[760px] lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="relative overflow-hidden bg-[#0d1630] px-6 py-10 text-white sm:px-10 sm:py-12 lg:px-14 lg:py-14">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_22%,rgba(55,130,255,0.42),transparent_20%),radial-gradient(circle_at_70%_58%,rgba(255,255,255,0.09),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0))]" />
-            <div className="absolute inset-0 bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.016)_0,rgba(255,255,255,0.016)_2px,transparent_2px,transparent_16px)] opacity-40" />
+          <div className="relative overflow-hidden bg-[linear-gradient(180deg,#192444_0%,#18213f_48%,#131c35_100%)] px-6 py-10 text-white sm:px-10 sm:py-12 lg:px-14 lg:py-14">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_24%,rgba(68,146,255,0.34),transparent_18%),radial-gradient(circle_at_68%_60%,rgba(255,255,255,0.07),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.025),rgba(255,255,255,0))]" />
+            <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)", backgroundSize: "18px 18px" }} />
             <div className="relative flex h-full flex-col justify-between">
               <div>
-                <div className="inline-flex rounded-full border border-white/10 bg-white/10 px-5 py-3 text-lg font-semibold tracking-[0.01em] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+                <div className="inline-flex rounded-full border border-white/10 bg-white/8 px-5 py-3 text-lg font-semibold tracking-[0.01em] text-white/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm">
                   Controle de Frota
                 </div>
                 <h1 className="mt-10 max-w-3xl text-[2.55rem] font-semibold leading-[1.08] tracking-[-0.03em] text-white drop-shadow-[0_3px_12px_rgba(0,0,0,0.35)] sm:text-[3.1rem] lg:text-[4.15rem]">
                   Controle completo de veículos, usuários e auditoria em um único sistema.
                 </h1>
-                <p className="mt-7 max-w-2xl text-lg leading-9 text-white/88 sm:text-[1.65rem] sm:leading-[2.6rem] lg:text-[1.1rem] lg:leading-10">
+                <p className="mt-7 max-w-2xl text-lg leading-9 text-white/78 sm:text-[1.65rem] sm:leading-[2.6rem] lg:text-[1.08rem] lg:leading-10">
                   Sistema interno para controle de utilização de veículos, check-in, check-out e histórico de uso.
                 </p>
               </div>
@@ -169,29 +171,34 @@ function LoginPage({ onLogin }) {
 
 function CasamaxLogo({ className = "" }) {
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <span className="text-[2.15rem] font-black uppercase leading-none tracking-[-0.06em] text-white drop-shadow-[0_4px_10px_rgba(0,0,0,0.3)] sm:text-[2.7rem] lg:text-[3.4rem]">
-        CASAMA
-      </span>
-      <span className="relative inline-flex h-[2.55rem] w-[2.55rem] items-center justify-center rounded-full bg-[#ff1c1c] shadow-[0_8px_18px_rgba(0,0,0,0.25)] sm:h-[3rem] sm:w-[3rem] lg:h-[4rem] lg:w-[4rem]">
-        <span className="absolute h-[74%] w-[19%] -rotate-[26deg] rounded-full bg-[#091224]" />
-        <span className="absolute h-[18%] w-[68%] rotate-[6deg] rounded-full bg-white" />
-      </span>
-      <span className="sr-only">CASAMAX</span>
-    </div>
+    <svg viewBox="0 0 736 168" className={className} role="img" aria-label="CASAMAX">
+      <g fill="#05080d">
+        <path d="M39 132c-27 0-39-16-39-48s12-48 39-48h57l-9 23H49c-15 0-21 7-21 25s6 25 21 25h34l8 23H39z" />
+        <path d="M127 132h-28l41-96h39l41 96h-29l-8-19h-48l-8 19zm32-74-16 36h31l-15-36z" />
+        <path d="M271 132c-20 0-37-5-50-15l10-21c11 8 25 13 40 13 18 0 26-4 26-12 0-6-4-10-15-12l-25-5c-23-5-34-16-34-35 0-24 20-39 51-39 19 0 34 4 47 12l-10 21c-10-6-23-10-37-10-16 0-24 4-24 12 0 6 4 10 15 12l24 5c24 5 35 16 35 35 0 24-19 39-53 39z" />
+        <path d="M357 132h-28l41-96h39l41 96h-29l-8-19h-48l-8 19zm32-74-16 36h31l-15-36z" />
+        <path d="M470 132V36h28l32 46 31-46h28v96h-27V76l-24 35h-16l-25-35v56h-27z" />
+        <path d="M629 132h-28l41-96h39l41 96h-29l-8-19h-48l-8 19zm32-74-16 36h31l-15-36z" />
+      </g>
+      <g transform="translate(575 6)">
+        <circle cx="90" cy="78" r="72" fill="#ff1c1c" />
+        <path d="M74 28h28l-18 34 41-34h38l-46 39 46 63h-35L96 84l-10 9 12 37H70L56 84 74 28z" fill="#05080d" />
+        <path d="M111 24h39l-9 32-33 17zM126 80l38 8-10 29h-39z" fill="#fff7f2" />
+      </g>
+    </svg>
   );
 }
 
 function LoginFeatureCard({ icon: Icon, title, text, accent = "text-white" }) {
   return (
-    <div className="rounded-[28px] border border-white/14 bg-white/[0.06] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm">
+    <div className="rounded-[28px] border border-white/12 bg-white/[0.05] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm">
       <div className="flex items-start gap-4">
         <div className={`mt-1 rounded-2xl bg-white/10 p-2.5 ${accent}`}>
           <Icon size={22} />
         </div>
         <div>
           <div className="text-[1.55rem] font-semibold tracking-[-0.02em] text-white lg:text-[1.05rem]">{title}</div>
-          <p className="mt-2 text-lg leading-8 text-white/80 lg:text-[0.98rem] lg:leading-7">{text}</p>
+          <p className="mt-2 text-lg leading-8 text-white/72 lg:text-[0.98rem] lg:leading-7">{text}</p>
         </div>
       </div>
     </div>
