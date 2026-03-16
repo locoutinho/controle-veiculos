@@ -18,6 +18,7 @@ O usuario logado e automaticamente tratado como motorista.
 - proprietario do veiculo obrigatoriamente vinculado a um usuario do sistema
 - usuario comum pode alterar a propria senha
 - administrador pode gerenciar usuarios, veiculos e configuracoes
+- administrador pode visualizar o log de acessos ao sistema
 - observacoes do veiculo visiveis para todos
 - `CHECK-OUT` automatico quando outro usuario nao proprietario retira um veiculo esquecido
 - retorno automatico ao proprietario quando um nao proprietario devolve o veiculo
@@ -31,6 +32,25 @@ O usuario logado e automaticamente tratado como motorista.
 - quando um nao proprietario retira o veiculo, o historico registra `CHECK-OUT automatico por uso do veiculo por outro usuario`
 - quando um nao proprietario devolve o veiculo, o historico registra `Retorno automatico ao proprietario`
 - se o proprietario estiver usando o proprio veiculo, o sistema nao encerra esse uso automaticamente
+
+## Log de acessos
+
+- toda tentativa de login com sucesso e registrada
+- tentativas invalidas tambem ficam registradas como falha
+- o administrador pode acessar a tela `Acessos ao sistema`
+- a tela mostra:
+  - usuario
+  - perfil
+  - data e hora do acesso
+  - data e hora do logout, quando existir
+  - status do acesso
+  - IP e dispositivo/navegador, quando disponiveis
+
+No dashboard do administrador tambem aparecem:
+
+- ultimo usuario que logou
+- quantidade de acessos no dia
+- quantidade de falhas no dia
 
 ## Usuarios de teste
 
@@ -120,3 +140,4 @@ Isso significa:
 6. entrar com `usuario` e alterar a propria senha em `Minha conta`
 7. testar retirada de veiculo de outro usuario e conferir `Retorno automatico ao proprietario` no historico
 8. testar exclusao de um registro fechado do historico com `admin`
+9. abrir `Acessos ao sistema` como `admin` e conferir logins com sucesso e falha

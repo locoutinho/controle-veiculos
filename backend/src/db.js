@@ -110,11 +110,28 @@ export function initializeDatabase() {
       FOREIGN KEY (actor_user_id) REFERENCES users(id)
     );
 
+    CREATE TABLE IF NOT EXISTS access_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      full_name_snapshot TEXT,
+      username_snapshot TEXT NOT NULL,
+      role_snapshot TEXT,
+      status TEXT NOT NULL CHECK (status IN ('success', 'failure')),
+      attempted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      logout_at TEXT,
+      ip_address TEXT,
+      user_agent TEXT,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_trips_vehicle_id ON trips(vehicle_id);
     CREATE INDEX IF NOT EXISTS idx_trips_user_id ON trips(user_id);
     CREATE INDEX IF NOT EXISTS idx_trips_status ON trips(status);
     CREATE INDEX IF NOT EXISTS idx_vehicles_owner_user_id ON vehicles(owner_user_id);
     CREATE INDEX IF NOT EXISTS idx_audit_logs_actor_user_id ON audit_logs(actor_user_id);
+    CREATE INDEX IF NOT EXISTS idx_access_logs_user_id ON access_logs(user_id);
+    CREATE INDEX IF NOT EXISTS idx_access_logs_attempted_at ON access_logs(attempted_at);
+    CREATE INDEX IF NOT EXISTS idx_access_logs_status ON access_logs(status);
   `);
 
   ensureColumn(
@@ -144,6 +161,7 @@ export function initializeDatabase() {
 
 export function resetDatabase() {
   db.exec(`
+    DROP TABLE IF EXISTS access_logs;
     DROP TABLE IF EXISTS audit_logs;
     DROP TABLE IF EXISTS system_settings;
     DROP TABLE IF EXISTS trips;

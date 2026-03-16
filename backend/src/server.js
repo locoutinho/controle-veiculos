@@ -8,18 +8,22 @@ import {
   changeOwnPassword,
   checkinVehicle,
   checkoutVehicle,
+  createAccessLog,
   createUser,
   createVehicle,
   deleteTripHistory,
   getDashboardData,
   getReferenceData,
   getSettings,
+  getUserPreviewByUsername,
   getUserById,
   getVehicleById,
+  listAccessLogs,
   listAuditLogs,
   listTrips,
   listUsers,
   listVehicles,
+  markAccessLogout,
   resetUserPassword,
   updateSettings,
   updateUser,
@@ -39,6 +43,13 @@ app.use(cors({
 }));
 app.use(express.json());
 
+function getRequestMeta(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  const ipAddress = Array.isArray(forwarded) ? forwarded[0] : String(forwarded || req.ip || "").split(",")[0].trim();
+  const userAgent = req.headers["user-agent"] || "";
+  return { ipAddress, userAgent };
+}
+
 function authRequired(req, res, next) {
   try {
     const token = (req.headers.authorization || "").replace("Bearer ", "");
@@ -46,6 +57,7 @@ function authRequired(req, res, next) {
     const user = getUserById(payload.sub);
     if (!user || user.status !== "active") return res.status(401).json({ message: "Sessao invalida." });
     req.user = user;
+    req.auth = payload;
     next();
   } catch {
     res.status(401).json({ message: "Acesso nao autorizado." });
@@ -60,15 +72,38 @@ function adminRequired(req, res, next) {
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 app.post("/api/auth/login", (req, res) => {
+  const meta = getRequestMeta(req);
   try {
     const user = authenticateUser(req.body.username, req.body.password);
-    res.json({ token: signToken(user), user });
+    const accessLogId = createAccessLog({
+      userId: user.id,
+      fullName: user.fullName,
+      username: user.username,
+      role: user.role,
+      status: "success",
+      ...meta
+    });
+    res.json({ token: signToken(user), user, accessLogId });
   } catch (error) {
+    const preview = getUserPreviewByUsername(req.body.username);
+    createAccessLog({
+      userId: preview?.id || null,
+      fullName: preview?.fullName || "",
+      username: req.body.username || "desconhecido",
+      role: preview?.role || "",
+      status: "failure",
+      ...meta
+    });
     res.status(401).json({ message: error.message });
   }
 });
 
 app.get("/api/auth/me", authRequired, (req, res) => res.json({ user: req.user }));
+
+app.post("/api/auth/logout", authRequired, (req, res) => {
+  markAccessLogout(req.body.accessLogId || req.auth?.accessLogId);
+  res.json({ ok: true });
+});
 
 app.post("/api/auth/change-password", authRequired, (req, res) => {
   try {
@@ -144,6 +179,7 @@ app.put("/api/settings", authRequired, adminRequired, (req, res) => {
 });
 
 app.get("/api/audit-logs", authRequired, adminRequired, (_req, res) => res.json(listAuditLogs()));
+app.get("/api/access-logs", authRequired, adminRequired, (req, res) => res.json(listAccessLogs(req.query)));
 app.get("/api/trips", authRequired, (req, res) => res.json(listTrips(req.user, req.query)));
 app.delete("/api/trips/:id", authRequired, adminRequired, (req, res) => {
   try {

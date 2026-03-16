@@ -33,6 +33,7 @@ async function request(path, options = {}) {
 export const api = {
   login: (payload) => request("/auth/login", { method: "POST", body: JSON.stringify(payload) }),
   me: () => request("/auth/me"),
+  logout: (payload) => request("/auth/logout", { method: "POST", body: JSON.stringify(payload) }),
   changeOwnPassword: (payload) => request("/auth/change-password", { method: "POST", body: JSON.stringify(payload) }),
   getDashboard: () => request("/dashboard"),
   getReferences: () => request("/references"),
@@ -47,6 +48,12 @@ export const api = {
   getSettings: () => request("/settings"),
   updateSettings: (payload) => request("/settings", { method: "PUT", body: JSON.stringify(payload) }),
   getAuditLogs: () => request("/audit-logs"),
+  getAccessLogs: (filters) => {
+    const params = new URLSearchParams(
+      Object.entries(filters || {}).filter(([, value]) => value !== "" && value !== null && value !== undefined)
+    );
+    return request(`/access-logs?${params.toString()}`);
+  },
   getTrips: (filters) => {
     const params = new URLSearchParams(
       Object.entries(filters || {}).filter(([, value]) => value !== "" && value !== null && value !== undefined)

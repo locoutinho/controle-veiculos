@@ -74,7 +74,15 @@ function App() {
 
   if (!hydrated) return <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-500">Carregando sessao...</div>;
   if (!session?.token) return <LoginPage onLogin={setSession} />;
-  return <AuthenticatedApp session={session} onLogout={() => setSession(null)} onSessionChange={setSession} />;
+  return <AuthenticatedApp session={session} onLogout={async () => {
+    try {
+      if (session?.accessLogId) await api.logout({ accessLogId: session.accessLogId });
+    } catch {
+      // Ignora erro de logout para nao bloquear a saida local.
+    } finally {
+      setSession(null);
+    }
+  }} onSessionChange={setSession} />;
 }
 
 function ScrollToTop() {
@@ -229,6 +237,7 @@ function AuthenticatedApp({ session, onLogout, onSessionChange }) {
     { to: "/minha-conta", label: "Minha conta", icon: KeyRound, adminOnly: false },
     { to: "/veiculos", label: "Veiculos", icon: CarFront, adminOnly: true },
     { to: "/usuarios", label: "Usuarios", icon: ShieldCheck, adminOnly: true },
+    { to: "/acessos", label: "Acessos ao sistema", icon: History, adminOnly: true },
     { to: "/configuracoes", label: "Configuracoes", icon: Settings, adminOnly: true }
   ].filter((item) => !item.adminOnly || isAdmin);
 
@@ -284,6 +293,7 @@ function AuthenticatedApp({ session, onLogout, onSessionChange }) {
             <Route path="/veiculos" element={<AdminRoute session={session}><VehiclesPage session={session} /></AdminRoute>} />
             <Route path="/veiculos/:id" element={<AdminRoute session={session}><VehicleDetailsPage session={session} /></AdminRoute>} />
             <Route path="/usuarios" element={<AdminRoute session={session}><UsersPage /></AdminRoute>} />
+            <Route path="/acessos" element={<AdminRoute session={session}><AccessLogsPage /></AdminRoute>} />
             <Route path="/configuracoes" element={<AdminRoute session={session}><SettingsPage session={session} onSessionChange={onSessionChange} /></AdminRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -320,6 +330,13 @@ function DashboardPage({ session }) {
             <MetricCard title="Usuarios ativos" value={data.counts.activeUsers || 0} accent="bg-sky-600" icon={Users} />
             <MetricCard title="KM registrados" value={data.summary.totalDistance || 0} accent="bg-indigo-600" icon={History} />
           </div>
+          {session.user.role === "admin" && data.accessSummary ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              <MetricCard title="Ultimo login" value={data.accessSummary.lastSuccessful?.username || "-"} accent="bg-slate-800" icon={UserRound} />
+              <MetricCard title="Acessos hoje" value={data.accessSummary.accessCountToday || 0} accent="bg-emerald-500" icon={LogIn} />
+              <MetricCard title="Falhas hoje" value={data.accessSummary.failedCountToday || 0} accent="bg-rose-500" icon={ShieldCheck} />
+            </div>
+          ) : null}
           <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
             <Panel title="Acoes rapidas" subtitle="Acesso direto aos fluxos principais do sistema.">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -776,6 +793,68 @@ function HistoryPage({ session }) {
       <Panel title="Movimentacoes" subtitle={`${filtered.length} registro(s) encontrado(s).`}>
         <SearchField value={search} onChange={setSearch} placeholder="Buscar por veiculo, usuario, proprietario, observacao ou operador" />
         <TripsTable trips={filtered} showOperators={session.user.role === "admin"} currentUserId={session.user.id} allowDelete={session.user.role === "admin"} onDeleteTrip={handleDeleteTrip} />
+      </Panel>
+    </PageShell>
+  );
+}
+
+function AccessLogsPage() {
+  const [filters, setFilters] = useState({ userId: "", dateFrom: "", dateTo: "", status: "" });
+  const [references, setReferences] = useState({ users: [] });
+  const [logs, setLogs] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.getReferences().then(setReferences).catch((err) => setError(err.message));
+  }, []);
+
+  useEffect(() => {
+    api.getAccessLogs(filters).then(setLogs).catch((err) => setError(err.message));
+  }, [filters]);
+
+  return (
+    <PageShell title="Acessos ao sistema" subtitle="Historico de logins com sucesso e falha, disponivel apenas para administradores.">
+      {error ? <Alert kind="error" message={error} /> : null}
+      <Panel title="Filtros" subtitle="Consulte por usuario, periodo e status.">
+        <div className="grid gap-4 md:grid-cols-4">
+          <SelectField label="Usuario" value={filters.userId} onChange={(value) => setFilters((current) => ({ ...current, userId: value }))} options={references.users.map((user) => ({ value: user.id, label: `${user.fullName} (${user.username})` }))} required={false} />
+          <Field label="De" type="date" value={filters.dateFrom} onChange={(value) => setFilters((current) => ({ ...current, dateFrom: value }))} required={false} />
+          <Field label="Ate" type="date" value={filters.dateTo} onChange={(value) => setFilters((current) => ({ ...current, dateTo: value }))} required={false} />
+          <SelectField label="Status" value={filters.status} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} options={[{ value: "success", label: "Sucesso" }, { value: "failure", label: "Falha" }]} required={false} />
+        </div>
+      </Panel>
+      <Panel title="Log de acessos" subtitle={`${logs.length} registro(s) encontrados, do mais recente para o mais antigo.`}>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="text-left text-slate-500">
+              <tr>
+                <th className="pb-3 font-medium">Usuario</th>
+                <th className="pb-3 font-medium">Perfil</th>
+                <th className="pb-3 font-medium">Data/Hora</th>
+                <th className="pb-3 font-medium">Logout</th>
+                <th className="pb-3 font-medium">Status</th>
+                <th className="pb-3 font-medium">IP</th>
+                <th className="pb-3 font-medium">Dispositivo</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {logs.map((log) => (
+                <tr key={log.id}>
+                  <td className="py-3">
+                    <div className="font-medium text-slate-900">{log.fullName || "Usuario nao identificado"}</div>
+                    <div className="text-slate-500">{log.username}</div>
+                  </td>
+                  <td className="py-3">{log.role || "-"}</td>
+                  <td className="py-3">{formatDateTime(log.attemptedAt)}</td>
+                  <td className="py-3">{formatDateTime(log.logoutAt)}</td>
+                  <td className="py-3"><StatusBadge status={log.status === "success" ? "available" : "maintenance"}>{log.status === "success" ? "Sucesso" : "Falha"}</StatusBadge></td>
+                  <td className="py-3">{log.ipAddress || "-"}</td>
+                  <td className="py-3 max-w-[320px] text-slate-600">{log.userAgent || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Panel>
     </PageShell>
   );

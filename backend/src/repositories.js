@@ -67,6 +67,13 @@ function getSettingsRow() {
   `).get();
 }
 
+function todayBounds() {
+  return {
+    start: dayjs().startOf("day").format(),
+    end: dayjs().endOf("day").format()
+  };
+}
+
 function getSystemDefaultOwnerId() {
   return db.prepare(`
     SELECT id
@@ -210,6 +217,104 @@ export function authenticateUser(username, password) {
   return { id: user.id, fullName: user.fullName, username: user.username, role: user.role, status: user.status };
 }
 
+export function getUserPreviewByUsername(username) {
+  return db.prepare(`
+    SELECT id, full_name AS fullName, username, role, status
+    FROM users
+    WHERE username = ?
+  `).get(username);
+}
+
+export function createAccessLog({ userId = null, fullName = "", username, role = "", status, ipAddress = "", userAgent = "" }) {
+  const result = db.prepare(`
+    INSERT INTO access_logs (user_id, full_name_snapshot, username_snapshot, role_snapshot, status, ip_address, user_agent)
+    VALUES (@userId, @fullName, @username, @role, @status, @ipAddress, @userAgent)
+  `).run({
+    userId,
+    fullName,
+    username,
+    role,
+    status,
+    ipAddress,
+    userAgent
+  });
+  return result.lastInsertRowid;
+}
+
+export function markAccessLogout(accessLogId) {
+  if (!accessLogId) return;
+  db.prepare(`
+    UPDATE access_logs
+    SET logout_at = CURRENT_TIMESTAMP
+    WHERE id = ? AND status = 'success' AND logout_at IS NULL
+  `).run(accessLogId);
+}
+
+export function listAccessLogs(filters = {}) {
+  const clauses = [];
+  const values = [];
+
+  if (filters.userId) {
+    clauses.push("COALESCE(a.user_id, 0) = ?");
+    values.push(Number(filters.userId));
+  }
+  if (filters.status) {
+    clauses.push("a.status = ?");
+    values.push(filters.status);
+  }
+  if (filters.dateFrom) {
+    clauses.push("datetime(a.attempted_at) >= datetime(?)");
+    values.push(filters.dateFrom);
+  }
+  if (filters.dateTo) {
+    clauses.push("datetime(a.attempted_at) <= datetime(?)");
+    values.push(filters.dateTo + "T23:59:59");
+  }
+
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+  return db.prepare(`
+    SELECT
+      a.id,
+      a.user_id AS userId,
+      a.full_name_snapshot AS fullName,
+      a.username_snapshot AS username,
+      a.role_snapshot AS role,
+      a.status,
+      a.attempted_at AS attemptedAt,
+      a.logout_at AS logoutAt,
+      a.ip_address AS ipAddress,
+      a.user_agent AS userAgent
+    FROM access_logs a
+    ${where}
+    ORDER BY datetime(a.attempted_at) DESC
+  `).all(...values);
+}
+
+export function getAccessLogSummary() {
+  const { start, end } = todayBounds();
+  const today = db.prepare(`
+    SELECT
+      SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) AS successCount,
+      SUM(CASE WHEN status = 'failure' THEN 1 ELSE 0 END) AS failureCount
+    FROM access_logs
+    WHERE datetime(attempted_at) BETWEEN datetime(?) AND datetime(?)
+  `).get(start, end);
+
+  const lastSuccessful = db.prepare(`
+    SELECT full_name_snapshot AS fullName, username_snapshot AS username, role_snapshot AS role, attempted_at AS attemptedAt
+    FROM access_logs
+    WHERE status = 'success'
+    ORDER BY datetime(attempted_at) DESC
+    LIMIT 1
+  `).get();
+
+  return {
+    lastSuccessful,
+    accessCountToday: today.successCount || 0,
+    failedCountToday: today.failureCount || 0
+  };
+}
+
 export function getUserById(id) {
   return db.prepare(`SELECT ${userFields} FROM users WHERE id = ?`).get(id);
 }
@@ -348,7 +453,14 @@ export function getDashboardData(currentUser) {
     LIMIT 6
   `).all(...scoped.values);
 
-  return { counts: { ...counts, activeUsers: activeUsers.activeUsers }, summary, recentTrips, activeTrips, currentOpenTrip: getDetailedOpenTripByUser(currentUser.id) };
+  return {
+    counts: { ...counts, activeUsers: activeUsers.activeUsers },
+    summary,
+    recentTrips,
+    activeTrips,
+    currentOpenTrip: getDetailedOpenTripByUser(currentUser.id),
+    accessSummary: currentUser.role === "admin" ? getAccessLogSummary() : null
+  };
 }
 
 export function listVehicles(includeInactive = true) {
