@@ -112,8 +112,8 @@ function LoginPage({ onLogin }) {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_42%),linear-gradient(90deg,rgba(255,255,255,0.08),transparent_18%,transparent_82%,rgba(255,255,255,0.08))]" />
           <div className="absolute bottom-0 left-0 right-0 h-[5px] bg-white/20 shadow-[0_-1px_0_rgba(255,255,255,0.25)]" />
           <div className="relative flex items-center gap-4">
-            <div className="rounded-[22px] bg-white px-4 py-2 shadow-[0_14px_30px_rgba(0,0,0,0.18)] sm:px-5">
-              <CasamaxLogo className="w-[190px] sm:w-[240px] lg:w-[280px]" />
+            <div className="rounded-[18px] bg-white px-5 py-2.5 text-[1.5rem] font-black uppercase tracking-[-0.05em] text-[#070b12] shadow-[0_14px_30px_rgba(0,0,0,0.18)] sm:px-6 sm:text-[1.9rem] lg:text-[2.2rem]">
+              CASAMAX
             </div>
             <span className="hidden text-2xl font-medium tracking-[0.01em] text-white/95 sm:inline lg:text-[2rem]">
               Controle de Frota
@@ -166,26 +166,6 @@ function LoginPage({ onLogin }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function CasamaxLogo({ className = "" }) {
-  return (
-    <svg viewBox="0 0 736 168" className={className} role="img" aria-label="CASAMAX">
-      <g fill="#05080d">
-        <path d="M39 132c-27 0-39-16-39-48s12-48 39-48h57l-9 23H49c-15 0-21 7-21 25s6 25 21 25h34l8 23H39z" />
-        <path d="M127 132h-28l41-96h39l41 96h-29l-8-19h-48l-8 19zm32-74-16 36h31l-15-36z" />
-        <path d="M271 132c-20 0-37-5-50-15l10-21c11 8 25 13 40 13 18 0 26-4 26-12 0-6-4-10-15-12l-25-5c-23-5-34-16-34-35 0-24 20-39 51-39 19 0 34 4 47 12l-10 21c-10-6-23-10-37-10-16 0-24 4-24 12 0 6 4 10 15 12l24 5c24 5 35 16 35 35 0 24-19 39-53 39z" />
-        <path d="M357 132h-28l41-96h39l41 96h-29l-8-19h-48l-8 19zm32-74-16 36h31l-15-36z" />
-        <path d="M470 132V36h28l32 46 31-46h28v96h-27V76l-24 35h-16l-25-35v56h-27z" />
-        <path d="M629 132h-28l41-96h39l41 96h-29l-8-19h-48l-8 19zm32-74-16 36h31l-15-36z" />
-      </g>
-      <g transform="translate(575 6)">
-        <circle cx="90" cy="78" r="72" fill="#ff1c1c" />
-        <path d="M74 28h28l-18 34 41-34h38l-46 39 46 63h-35L96 84l-10 9 12 37H70L56 84 74 28z" fill="#05080d" />
-        <path d="M111 24h39l-9 32-33 17zM126 80l38 8-10 29h-39z" fill="#fff7f2" />
-      </g>
-    </svg>
   );
 }
 
@@ -252,29 +232,47 @@ function AuthenticatedApp({ session, onLogout, onSessionChange }) {
   ].filter((item) => !item.adminOnly || isAdmin);
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto flex max-w-[1650px] flex-col lg:min-h-screen lg:flex-row">
-        <aside className="bg-ink px-5 py-6 text-white lg:w-80">
-          <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.25em] text-teal-300">Frota</p>
-            <h1 className="mt-2 text-2xl font-semibold">Controle de Veiculos</h1>
+    <div className="min-h-screen bg-[#eef2f9]">
+      <div className="relative overflow-hidden bg-[linear-gradient(180deg,#ef1927_0%,#cf1024_65%,#f03c4c_100%)] px-5 py-4 text-white sm:px-8 lg:px-12">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_42%),linear-gradient(90deg,rgba(255,255,255,0.08),transparent_18%,transparent_82%,rgba(255,255,255,0.08))]" />
+        <div className="absolute bottom-0 left-0 right-0 h-[5px] bg-white/20 shadow-[0_-1px_0_rgba(255,255,255,0.25)]" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="rounded-[18px] bg-white px-5 py-2.5 text-[1.35rem] font-black uppercase tracking-[-0.05em] text-[#070b12] shadow-[0_14px_30px_rgba(0,0,0,0.18)] sm:px-6 sm:text-[1.7rem]">
+              CASAMAX
+            </div>
+            <span className="text-xl font-medium tracking-[0.01em] text-white/95 sm:text-[1.75rem]">
+              Controle de Frota
+            </span>
           </div>
+          <div className="text-sm text-white/95 sm:text-base">
+            <div>Usuário: <strong>{session.user.fullName}</strong></div>
+            <div>Perfil: <strong>{session.user.role === "admin" ? "Administrador" : "Usuário comum"}</strong></div>
+          </div>
+        </div>
+      </div>
+      <div className="mx-auto flex max-w-[1650px] flex-col lg:min-h-[calc(100vh-96px)] lg:flex-row">
+        <aside className="relative overflow-hidden bg-[linear-gradient(180deg,#192444_0%,#18213f_48%,#131c35_100%)] px-5 py-6 text-white lg:w-80">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_24%,rgba(68,146,255,0.24),transparent_18%),linear-gradient(180deg,rgba(255,255,255,0.025),rgba(255,255,255,0))]" />
+          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)", backgroundSize: "18px 18px" }} />
+          <div className="relative">
           <nav className="grid gap-2">
             {menu.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.to === "/"} className={({ isActive }) => `touch-manipulation flex items-center gap-3 rounded-2xl px-4 py-3 transition ${isActive ? "bg-white text-ink" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+              <NavLink key={item.to} to={item.to} end={item.to === "/"} className={({ isActive }) => `touch-manipulation flex items-center gap-3 rounded-2xl px-4 py-3 transition ${isActive ? "bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
                 <item.icon size={18} />
                 {item.label}
               </NavLink>
             ))}
           </nav>
-          <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+          <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             <p className="font-medium text-white">{session.user.fullName}</p>
-            <p>{session.user.role === "admin" ? "Administrador" : "Usuario comum"}</p>
-            <p className="mt-1 text-xs text-slate-400">Sessao ativa</p>
-            <button onClick={onLogout} className="mt-4 w-full rounded-2xl bg-white/10 px-3 py-2 text-white hover:bg-white/20">Sair</button>
+            <p>{session.user.role === "admin" ? "Administrador" : "Usuário comum"}</p>
+            <p className="mt-1 text-xs text-slate-400">Sessão ativa</p>
+            <button onClick={onLogout} className="mt-4 w-full rounded-2xl bg-[linear-gradient(180deg,#ff3746_0%,#dc1326_100%)] px-3 py-2 text-white shadow-[0_12px_24px_rgba(220,19,38,0.22)] hover:brightness-105">Sair</button>
+          </div>
           </div>
         </aside>
-        <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6">
+        <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6 lg:px-6 lg:py-7">
           <ScrollToTop />
           <Routes>
             <Route path="/" element={<DashboardPage session={session} />} />
@@ -1011,7 +1009,7 @@ function TripCard({ trip, currentUserId = null }) {
 function PageShell({ title, subtitle, children }) {
   return (
     <div className="space-y-6">
-      <header className="rounded-[28px] bg-[linear-gradient(135deg,_#0f172a,_#164e63)] px-6 py-8 text-white shadow-panel">
+      <header className="rounded-[30px] bg-[linear-gradient(135deg,#17233f_0%,#1c3558_62%,#214d7e_100%)] px-6 py-8 text-white shadow-[0_24px_50px_rgba(22,35,63,0.18)]">
         <h2 className="text-3xl font-semibold">{title}</h2>
         <p className="mt-2 max-w-3xl text-sm text-slate-200">{subtitle}</p>
       </header>
@@ -1022,7 +1020,7 @@ function PageShell({ title, subtitle, children }) {
 
 function Panel({ title, subtitle, children }) {
   return (
-    <section className="rounded-[28px] bg-white p-6 shadow-panel">
+    <section className="rounded-[30px] border border-white/70 bg-[linear-gradient(180deg,#ffffff_0%,#f9fbff_100%)] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.09)]">
       <div className="mb-5">
         <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
         <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
@@ -1034,7 +1032,7 @@ function Panel({ title, subtitle, children }) {
 
 function MetricCard({ title, value, accent, icon: Icon }) {
   return (
-    <div className="rounded-[28px] bg-white p-5 shadow-panel">
+    <div className="rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
       <div className="flex items-center justify-between">
         <div><div className="text-sm text-slate-500">{title}</div><div className="mt-2 text-4xl font-semibold text-slate-900">{value}</div></div>
         <div className={`rounded-2xl ${accent} p-3 text-white`}><Icon size={22} /></div>
@@ -1049,7 +1047,7 @@ function FeatureCard({ title, text }) {
 
 function ActionCard({ title, text, buttonLabel, onClick, tone }) {
   return (
-    <button type="button" onClick={onClick} className="touch-manipulation w-full rounded-3xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-slate-300 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-accent/30">
+    <button type="button" onClick={onClick} className="touch-manipulation w-full rounded-3xl border border-white/70 bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] p-4 text-left shadow-[0_16px_34px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white focus:outline-none focus:ring-2 focus:ring-accent/30">
       <div className="font-semibold text-slate-900">{title}</div>
       <p className="mt-2 text-sm text-slate-600">{text}</p>
       <span className={`mt-4 inline-flex items-center gap-2 rounded-2xl ${tone} px-4 py-3 font-medium text-white`}>
@@ -1163,11 +1161,11 @@ function TextArea({ label, value, onChange, className = "" }) {
 }
 
 function PrimaryButton({ children, className = "", ...props }) {
-  return <button {...props} className={`touch-manipulation rounded-2xl bg-ink px-4 py-3 font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 ${className}`}>{children}</button>;
+  return <button {...props} className={`touch-manipulation rounded-2xl bg-[linear-gradient(180deg,#ff3746_0%,#dc1326_100%)] px-4 py-3 font-medium text-white shadow-[0_14px_28px_rgba(220,19,38,0.2)] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}>{children}</button>;
 }
 
 function SecondaryButton({ children, className = "", ...props }) {
-  return <button {...props} className={`touch-manipulation rounded-2xl border border-slate-200 px-4 py-3 text-slate-600 hover:bg-slate-50 ${className}`}>{children}</button>;
+  return <button {...props} className={`touch-manipulation rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-600 hover:bg-slate-50 ${className}`}>{children}</button>;
 }
 
 export default App;
