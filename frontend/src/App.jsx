@@ -109,9 +109,9 @@ function LoginPage({ onLogin }) {
   return (
     <div className="min-h-screen bg-[#f2f4fb] px-3 py-3 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mx-auto max-w-[1500px] overflow-hidden rounded-[30px] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.18)]">
-        <div className="relative flex items-center gap-4 overflow-hidden bg-[linear-gradient(180deg,#ef1927_0%,#cf1024_65%,#f03c4c_100%)] px-6 py-5 text-white sm:px-10 lg:px-14">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_42%),linear-gradient(90deg,rgba(255,255,255,0.08),transparent_18%,transparent_82%,rgba(255,255,255,0.08))]" />
-          <div className="absolute bottom-0 left-0 right-0 h-[5px] bg-white/20 shadow-[0_-1px_0_rgba(255,255,255,0.25)]" />
+        <div className="relative flex items-center gap-4 overflow-hidden bg-[linear-gradient(180deg,#1f2029_0%,#191b25_100%)] px-6 py-5 text-white sm:px-10 lg:px-14">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_42%),linear-gradient(90deg,rgba(255,255,255,0.06),transparent_18%,transparent_82%,rgba(255,255,255,0.06))]" />
+          <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-[#f4f6fb] shadow-[0_-1px_0_rgba(255,255,255,0.15)]" />
           <div className="relative flex items-center gap-4">
             <div className="rounded-[18px] bg-white px-4 py-2 shadow-[0_14px_30px_rgba(0,0,0,0.18)] sm:px-5">
               <img src={casamaxLogo} alt="Casamax" className="w-[185px] sm:w-[220px] lg:w-[250px]" />
@@ -234,9 +234,9 @@ function AuthenticatedApp({ session, onLogout, onSessionChange }) {
 
   return (
     <div className="min-h-screen bg-[#eef2f9]">
-      <div className="relative overflow-hidden bg-[linear-gradient(180deg,#ef1927_0%,#cf1024_65%,#f03c4c_100%)] px-5 py-4 text-white sm:px-8 lg:px-12">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_42%),linear-gradient(90deg,rgba(255,255,255,0.08),transparent_18%,transparent_82%,rgba(255,255,255,0.08))]" />
-        <div className="absolute bottom-0 left-0 right-0 h-[5px] bg-white/20 shadow-[0_-1px_0_rgba(255,255,255,0.25)]" />
+      <div className="relative overflow-hidden bg-[linear-gradient(180deg,#1f2029_0%,#191b25_100%)] px-5 py-4 text-white sm:px-8 lg:px-12">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_42%),linear-gradient(90deg,rgba(255,255,255,0.06),transparent_18%,transparent_82%,rgba(255,255,255,0.06))]" />
+        <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-[#f4f6fb] shadow-[0_-1px_0_rgba(255,255,255,0.15)]" />
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="rounded-[18px] bg-white px-4 py-2 shadow-[0_14px_30px_rgba(0,0,0,0.18)] sm:px-5">
