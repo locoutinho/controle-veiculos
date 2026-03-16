@@ -22,6 +22,7 @@ import {
   LayoutDashboard
 } from "lucide-react";
 import { api } from "./api";
+import casamaxLogo from "./assets/casamax-logo.png";
 import { formatDate, formatDateTime, formatMinutes, tripActionLabel, tripStatusLabel, vehicleStatusLabel } from "./utils";
 
 const emptyVehicle = {
@@ -113,7 +114,7 @@ function LoginPage({ onLogin }) {
           <div className="absolute bottom-0 left-0 right-0 h-[5px] bg-white/20 shadow-[0_-1px_0_rgba(255,255,255,0.25)]" />
           <div className="relative flex items-center gap-4">
             <div className="rounded-[18px] bg-white px-4 py-2 shadow-[0_14px_30px_rgba(0,0,0,0.18)] sm:px-5">
-              <CasamaxBrandImage className="w-[185px] sm:w-[220px] lg:w-[250px]" />
+              <img src={casamaxLogo} alt="Casamax" className="w-[185px] sm:w-[220px] lg:w-[250px]" />
             </div>
             <span className="hidden text-2xl font-medium tracking-[0.01em] text-white/95 sm:inline lg:text-[2rem]">
               Controle de Frota
@@ -185,26 +186,6 @@ function LoginFeatureCard({ icon: Icon, title, text, accent = "text-white" }) {
   );
 }
 
-function CasamaxBrandImage({ className = "" }) {
-  return (
-    <svg viewBox="0 0 736 168" className={className} role="img" aria-label="Casamax">
-      <g fill="#05080d">
-        <path d="M40 130c-28 0-40-15-40-47s12-47 40-47h54l-10 24H50c-15 0-22 7-22 23s7 23 22 23h31l10 24H40z" />
-        <path d="M128 130h-28l42-94h38l43 94h-30l-8-18h-48l-9 18zm33-71-16 34h31l-15-34z" />
-        <path d="M272 130c-20 0-38-5-51-15l11-21c11 8 24 12 39 12 18 0 26-4 26-11 0-6-4-10-14-12l-25-5c-23-5-35-16-35-35 0-24 20-39 52-39 18 0 34 4 46 12l-10 20c-10-6-22-9-35-9-16 0-24 4-24 11 0 6 4 10 15 12l24 5c23 5 35 16 35 35 0 25-20 40-54 40z" />
-        <path d="M357 130h-28l42-94h38l43 94h-30l-8-18h-48l-9 18zm33-71-16 34h31l-15-34z" />
-        <path d="M470 130V36h27l32 44 31-44h28v94h-27V76l-24 34h-16l-24-34v54h-27z" />
-        <path d="M627 130h-28l42-94h38l43 94h-30l-8-18h-48l-9 18zm33-71-16 34h31l-15-34z" />
-      </g>
-      <g transform="translate(575 4)">
-        <circle cx="88" cy="80" r="72" fill="#ff1d1d" />
-        <path d="M57 98l34-20-22-42h32l15 32 31-32h35L136 80l22 50h-31l-15-35-23 12 8 23H66z" fill="#05080d" />
-        <path d="M122 31h44l-10 33-34 16zM133 88l39 8-10 30h-40z" fill="#fff" />
-      </g>
-    </svg>
-  );
-}
-
 function LoginTextField({ label, value, onChange, icon: Icon }) {
   return (
     <label className="grid gap-3 text-[#2c3550]">
@@ -259,7 +240,7 @@ function AuthenticatedApp({ session, onLogout, onSessionChange }) {
         <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <div className="rounded-[18px] bg-white px-4 py-2 shadow-[0_14px_30px_rgba(0,0,0,0.18)] sm:px-5">
-              <CasamaxBrandImage className="w-[165px] sm:w-[195px] lg:w-[220px]" />
+              <img src={casamaxLogo} alt="Casamax" className="w-[165px] sm:w-[195px] lg:w-[220px]" />
             </div>
             <span className="text-xl font-medium tracking-[0.01em] text-white/95 sm:text-[1.75rem]">
               Controle de Frota
